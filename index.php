@@ -296,17 +296,19 @@ $size_nvidia   = read_iso_size_gb('borshevik-nvidia-stable.iso');
                 <header class="title">
                     <h1>Borshevik</h1>
                     <p>
-                        Borshevik is an immutable desktop image built on top of
+                        Borshevik is an immutable, laptop-first desktop image built on top of
                         <a href="https://www.fedoraproject.org/atomic-desktops/" class="link" target="_blank" rel="noopener noreferrer">
                             Fedora Atomic
                         </a>
                         and the
                         <a href="https://universal-blue.org/" target="_blank" class="link" rel="noopener noreferrer">
                             uBlue ecosystem
-                        </a>.
-                        It ships as a single read-only system image with atomic updates and simple rollbacks, a mostly
-                        upstream GNOME desktop, multimedia support, Chrome and a curated Flatpak set, plus a few small tweaks
-                        so you can install it, log in and start working instead of spending the evening on first-boot setup.
+                        </a>
+                        , aiming to be a more capable ChromeOS-style desktop.
+                        It ships as a single read-only system image with atomic updates and simple rollbacks,
+                        the stock Fedora GNOME desktop tuned with a small set of preinstalled GNOME Shell extensions,
+                        multimedia support, Chrome, and a curated Flatpak set —
+                        so you can install it and start using it right away, even if you’re new to Linux.
                     </p>
                 </header>
 
@@ -372,7 +374,7 @@ $size_nvidia   = read_iso_size_gb('borshevik-nvidia-stable.iso');
                     <div>
                         <a class="link" href="https://github.com/komorebinator/borshevik"
                             target="_blank" rel="noopener noreferrer">
-                            View source on GitHub
+                            More details on GitHub
                         </a>
                     </div>
                 </footer>
