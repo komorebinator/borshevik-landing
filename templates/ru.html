@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="{{LANG}}">
+
+<head>
+    <meta charset="utf-8">
+    <title>Borshevik Linux</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" href="borshevik_logo.svg">
+    <meta name="description"
+        content="Borshevik — операционная система, построенная на базе Fedora Atomic и экосистемы uBlue.">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="shell">
+        <div class="card">
+            <main class="card-inner">
+                <div class="logo-wrap">
+                    <div class="logo-circle">
+                        <img src="borshevik_logo.svg" alt="Логотип Borshevik">
+                    </div>
+                </div>
+
+                <header class="title">
+                    <h1>Borshevik</h1>
+                    <p>
+                        Borshevik — это операционная система, построенная на
+                        <a href="https://www.fedoraproject.org/atomic-desktops/" class="link" target="_blank"
+                            rel="noopener noreferrer">
+                            Fedora Atomic
+                        </a>
+                        и экосистеме
+                        <a href="https://universal-blue.org/" target="_blank" class="link" rel="noopener noreferrer">
+                            uBlue
+                        </a>,
+                        и задуманная как более функциональная альтернатива <b>ChromeOS</b>.
+                        Поставляется как единый готовый образ с надёжным механизмом доставки обновлений и простым
+                        откатом на предыдущую версию.
+                        Внутри — стандартный <b>GNOME</b> из <b>Fedora</b>, немного доработанный расширениями, плюс
+                        мультимедиа,
+                        <b>Chrome</b> и подобранный набор приложений
+                        — чтобы вы могли установить и сразу начать работать, даже если вы новичок в Linux.
+                    </p>
+                </header>
+
+                <section class="downloads" aria-label="Загрузки">
+                    <div class="download-block">
+                        <a class="download-button" href="/iso/borshevik-stable.iso">
+                            <div class="download-content">
+                                <div class="download-title">Скачать{{SIZE_STANDARD_PART}}</div>
+                                <div class="download-subtitle">Стандартный образ · Для AMD / Intel</div>
+                            </div>
+                        </a>
+                        <div class="checksum">
+                            <span class="checksum-label">Checksum:</span>
+                            <code>{{CHECKSUM_STANDARD}}</code>
+                        </div>
+                    </div>
+
+                    <div class="download-block">
+                        <a class="download-button" href="/iso/borshevik-nvidia-stable.iso">
+                            <div class="download-content">
+                                <div class="download-title">Скачать (NVIDIA){{SIZE_NVIDIA_PART}}</div>
+                                <div class="download-subtitle">Для NVIDIA</div>
+                            </div>
+                        </a>
+                        <div class="checksum">
+                            <span class="checksum-label">Checksum:</span>
+                            <code>{{CHECKSUM_NVIDIA}}</code>
+                        </div>
+                    </div>
+                </section>
+
+                <p>
+                    Вам также может понадобиться <b>Fedora Media Writer</b>, чтобы записать образ на USB-накопитель
+                </p>
+                <ul class="wmv-list">
+                    <li>
+                        <a class="link" href="https://github.com/FedoraQt/MediaWriter/releases/latest" target="_blank"
+                            rel="noopener noreferrer">
+                            macOS / Windows
+                        </a>
+                    </li>
+                    <li>
+                        <a class="link" href="https://flathub.org/en/apps/org.fedoraproject.MediaWriter" target="_blank"
+                            rel="noopener noreferrer">
+                            Linux (Flathub)
+                        </a>
+                    </li>
+                </ul>
+
+                <footer class="footer">
+                    <div>© {{YEAR}} Borshevik project</div>
+                    <div>
+                        <a class="link" href="https://github.com/komorebinator/borshevik" target="_blank"
+                            rel="noopener noreferrer">
+                            Подробнее на GitHub
+                        </a>
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+</body>
+
+</html>
