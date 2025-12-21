@@ -9,10 +9,6 @@
     --border-grad-4: #deb8ce
 }
 
-* {
-    box-sizing: border-box;
-}
-
 html,
 body {
     height: 100%;
@@ -25,9 +21,7 @@ body {
     background: radial-gradient(circle at top, #17172b 0, #050513 55%, #020208 100%);
     color: var(--text);
     display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 24px;
 }
 
 .shell {
