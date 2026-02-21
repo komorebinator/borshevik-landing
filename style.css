@@ -9,16 +9,15 @@
     --border-grad-4: #deb8ce
 }
 
-html,
-body {
-    height: 100%;
-}
-
 body {
     margin: 0;
+    min-height: 100vh;
+    padding: 40px 0;
+    box-sizing: border-box;
     font-family: system-ui, -apple-system, BlinkMacSystemFont,
         "SF Pro Text", "Segoe UI", sans-serif;
-    background: radial-gradient(circle at top, #17172b 0, #050513 55%, #020208 100%);
+    background: radial-gradient(circle at top, #17172b 0, #050513 55%, #020208 100%) no-repeat;
+    background-size: 100% 100%;
     color: var(--text);
     display: flex;
     justify-content: center;
@@ -27,9 +26,15 @@ body {
 .shell {
     max-width: 640px;
     width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
+    .shell {
+        padding: 0;
+    }
+
     .card-inner {
         padding: 32px 34px 24px;
     }
@@ -38,7 +43,7 @@ body {
 .logo-wrap {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .logo-circle {
@@ -61,7 +66,7 @@ body {
 
 .title {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 28px;
 }
 
 h1 {
@@ -72,7 +77,7 @@ h1 {
 }
 
 p {
-    margin: 46px 0 0;
+    margin: 32px 0 0;
     font-size: 16px;
     color: var(--muted);
     line-height: 1.5;
@@ -188,7 +193,7 @@ p {
 }
 
 .footer {
-    margin-top: 40px;
+    margin-top: 28px;
     font-size: 14px;
     color: #7a7f9a;
     display: flex;
