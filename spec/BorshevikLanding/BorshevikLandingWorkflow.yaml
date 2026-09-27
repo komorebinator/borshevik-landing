@@ -1,5 +1,5 @@
-description: How work is done on the Borshevik website. The maintainer works straight on `main`, anyone else by pull request into it. `main` is the site: a push that touches the site's files deploys them to borshevik.org by itself, within a minute, with no build, no version and no release in between — so a change is looked at on this machine, served from the working tree, before it is committed, because once it is pushed visitors see it. The ISOs the page offers are not part of this: borshevik's publish-iso workflow uploads them to the server, and deploying never touches them.
-extends: @DuckWorkflow
+description: "How work is done on the Borshevik website. The maintainer works straight on `main`, anyone else by pull request into it. `main` is the site: a push that touches the site's files deploys them to borshevik.org by itself, within a minute, with no build, no version and no release in between — so a change is looked at on this machine, served from the working tree, before it is committed, because once it is pushed visitors see it. The ISOs the page offers are not part of this: borshevik's publish-iso workflow uploads them to the server, and deploying never touches them."
+extends: "@DuckWorkflow"
 main_branch: main
 src: .github/
 branches:
@@ -42,7 +42,7 @@ steps:
     when: a successful run of deploy.yml deployed a commit of main that contains the change
 components:
   - id: deploy
-    type: @Pipeline
+    type: "@Pipeline"
     platform: GitHub Actions
     src: .github/workflows/deploy.yml
     triggers:
@@ -54,32 +54,32 @@ components:
       - the site's files on the server under DEPLOY_PATH, replaced where they changed; nothing else there is touched
     components:
       - id: DEPLOY_HOST
-        type: @Secret
+        type: "@Secret"
         storage: GitHub Actions repository secret
         used_by: the rsync step
         description: The server's host name or IP address.
       - id: DEPLOY_PORT
-        type: @Secret
+        type: "@Secret"
         storage: GitHub Actions repository secret; optional
         used_by: the rsync step
         description: The server's SSH port. Empty or unset means 22.
       - id: DEPLOY_USER
-        type: @Secret
+        type: "@Secret"
         storage: GitHub Actions repository secret
         used_by: the rsync step
         description: The account the site's files belong to on the server.
       - id: DEPLOY_PATH
-        type: @Secret
+        type: "@Secret"
         storage: GitHub Actions repository secret
         used_by: the rsync step
         description: "Absolute path of the site root on the server — the folder that holds index.php and iso/. Kept as a secret only so the server's layout is not published with the repository."
       - id: DEPLOY_SSH_KEY
-        type: @Secret
+        type: "@Secret"
         storage: GitHub Actions repository secret
         used_by: the SSH setup step
         description: "Private half of an ed25519 key pair made for deploying and nothing else, without a passphrase. Its public half is the only line it adds to DEPLOY_USER's ~/.ssh/authorized_keys on the server, so revoking deploy access is deleting that line, without touching the maintainer's own keys."
       - id: DEPLOY_KNOWN_HOSTS
-        type: @Secret
+        type: "@Secret"
         storage: GitHub Actions repository secret
         used_by: the SSH setup step
         description: "The server's host key lines as `ssh-keyscan -p <port> <host>` prints them, checked once against the server's real fingerprint when the secret is set. With StrictHostKeyChecking=yes the runner then refuses any other host, instead of trusting whatever answers at deploy time — which is all running ssh-keyscan inside the job would do."
