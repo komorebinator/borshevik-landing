@@ -80,11 +80,13 @@ function pick_locale(array $supported, string $default = 'en'): string
     return $default;
 }
 
-$checksum_standard = read_checksum('borshevik-stable.iso-CHECKSUM');
-$checksum_nvidia   = read_checksum('borshevik-nvidia-stable.iso-CHECKSUM');
+$isos = require __DIR__ . '/iso.php';
 
-$size_standard = read_iso_size_gb('borshevik-stable.iso');
-$size_nvidia   = read_iso_size_gb('borshevik-nvidia-stable.iso');
+$checksum_standard = read_checksum($isos['standard'] . '-CHECKSUM');
+$checksum_nvidia   = read_checksum($isos['nvidia'] . '-CHECKSUM');
+
+$size_standard = read_iso_size_gb($isos['standard']);
+$size_nvidia   = read_iso_size_gb($isos['nvidia']);
 
 $templateMap = [
     'en' => __DIR__ . '/templates/en.html',
@@ -112,6 +114,9 @@ $year = date('Y');
 $repl = [
     '{{LANG}}' => htmlspecialchars($lang, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
     '{{YEAR}}' => $year,
+
+    '{{ISO_STANDARD_FILE}}' => rawurlencode($isos['standard']),
+    '{{ISO_NVIDIA_FILE}}'   => rawurlencode($isos['nvidia']),
 
     '{{SIZE_STANDARD_PART}}' => $size_standard !== '' ? ' · ' . htmlspecialchars($size_standard, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '',
     '{{SIZE_NVIDIA_PART}}'   => $size_nvidia   !== '' ? ' · ' . htmlspecialchars($size_nvidia,   ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '',

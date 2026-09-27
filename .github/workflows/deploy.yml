@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - index.php
+      - iso.php
+      - download.php
+      - .htaccess
       - style.css
       - borshevik_logo.svg
       - templates/**
@@ -34,7 +37,7 @@ jobs:
       - name: Collect site files
         run: |
           mkdir _site
-          cp -r index.php style.css borshevik_logo.svg templates share _site/
+          cp -r index.php iso.php download.php .htaccess style.css borshevik_logo.svg templates share _site/
 
       - name: Configure SSH
         env:
@@ -45,6 +48,20 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # Switching to ISOs that have not finished uploading would break the download buttons.
+      - name: Check the offered ISOs are on the server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          standard=$(php -r 'echo (require "iso.php")["standard"];')
+          nvidia=$(php -r 'echo (require "iso.php")["nvidia"];')
+          ssh -i "$HOME/.ssh/deploy_key" -p "${DEPLOY_PORT:-22}" -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_PATH%/}/iso' && ls -l -- '$standard' '$standard-CHECKSUM' '$nvidia' '$nvidia-CHECKSUM'"
 
       # No --delete: the site root also holds iso/ and whatever the host keeps there.
       - name: Upload

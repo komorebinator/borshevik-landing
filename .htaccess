@@ -1,0 +1,6 @@
+# Permanent ISO links: always lead to the images iso.php offers.
+RewriteEngine On
+RewriteRule ^iso/borshevik-stable\.iso$ download.php?variant=standard [L]
+RewriteRule ^iso/borshevik-stable\.iso-CHECKSUM$ download.php?variant=standard&file=checksum [L]
+RewriteRule ^iso/borshevik-nvidia-stable\.iso$ download.php?variant=nvidia [L]
+RewriteRule ^iso/borshevik-nvidia-stable\.iso-CHECKSUM$ download.php?variant=nvidia&file=checksum [L]

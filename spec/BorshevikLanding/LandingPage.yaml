@@ -1,12 +1,12 @@
 name: Borshevik landing page
-description: "The whole of borshevik.org: one PHP script that renders one of two HTML templates, a stylesheet and the logo — plus one file that is no part of the page but is served from this site, the App Manager's application list (@LandingPage#applications). There is no framework, no build step and no database — the files in the repository are the files the web server runs, copied there by @BorshevikLandingWorkflow#deploy. The only thing the page reads at request time besides its own files is the server's `iso/` folder, which sits next to index.php, is not in the repository, and is filled by hand with the installer images @LandingPage#iso-directory describes; the page takes each ISO's size and checksum from there, so the numbers it shows are those of the file a visitor actually downloads."
+description: "The whole of borshevik.org: one PHP script that renders one of two HTML templates, a stylesheet and the logo; the choice of which installer images the site offers (@LandingPage#offered-isos), with the redirect that keeps the permanent ISO links pointing at that choice; and one file that is no part of the page but is served from this site, the App Manager's application list (@LandingPage#applications). There is no framework, no build step and no database — the files in the repository are the files the web server runs, copied there by @BorshevikLandingWorkflow#deploy. The images themselves are not in the repository: they sit in the server's `iso/` folder (@LandingPage#iso-directory), uploaded there by borshevik's publish-iso workflow, each under a name no other build shares. Uploading one changes nothing a visitor sees; the site starts offering it when @LandingPage#offered-isos is changed and deployed. The page takes each offered ISO's size and checksum from the files on the server, so the numbers it shows are those of the file a visitor actually downloads."
 extends: @Software
-platform: PHP 8 behind any web server that runs index.php as the directory index (the production host is InterServer). Uses only the standard library.
+platform: PHP 8 behind LiteSpeed, which honours .htaccess rewrite rules (the production host is InterServer shared hosting). Uses only the standard library.
 repository: https://github.com/komorebinator/borshevik-landing
 src: .
 tests:
   - id: checks
-    description: "The failures that stay silent until a visitor or a new install hits them: index.php no longer parsing (the whole site answers 500), an applications.json the App Manager will refuse (first-login app installation breaks on every new machine), a placeholder missing from one template or misspelt in one (that value quietly vanishes from one language), and the render path itself — language choice, ISO size and checksum. Run by @BorshevikLandingWorkflow#deploy before anything is uploaded, and before every commit."
+    description: "The failures that stay silent until a visitor or a new install hits them: index.php no longer parsing (the whole site answers 500), an applications.json the App Manager will refuse (first-login app installation breaks on every new machine), a placeholder missing from one template or misspelt in one (that value quietly vanishes from one language), an offered ISO name that is malformed or equal to a permanent link (the permanent link would redirect to itself), the permanent links no longer redirecting where they should, and the render path itself — language choice, links, ISO size and checksum. Run by @BorshevikLandingWorkflow#deploy before anything is uploaded, and before every commit."
     command: bash tests/check.sh
     expect: exits 0 and prints 'all checks pass'
   - id: seen-by-the-author
@@ -18,15 +18,15 @@ components:
     type: @ShellScript
     interpreter: bash
     src: tests/check.sh
-    description: "The script behind @LandingPage#tests#checks. Needs php-cli and jq, both present on the GitHub runner; on this machine it runs inside the same container @LandingPage#recipes#run uses, with jq installed alongside php-cli. Works from any current directory — it resolves the repository root from its own location — and never writes into the repository: rendering happens in a temporary copy."
+    description: "The script behind @LandingPage#tests#checks. Needs php-cli, jq and curl, all present on the GitHub runner; on this machine it runs inside the same container @LandingPage#recipes#run uses, with jq installed alongside php-cli. Works from any current directory — it resolves the repository root from its own location — and never writes into the repository: everything it runs, it runs in a temporary copy, removed on exit."
     functions:
       - id: run
-        description: "Runs every check, printing 'ok <name>' or 'FAIL <name>: <reason>' for each, keeps going after a failure, and exits 1 if any failed, else prints 'all checks pass' and exits 0. (1) php-syntax: `php -l index.php`. (2) applications-json: jq asserts the file is a non-empty array whose every entry has a non-empty string `name`, a non-empty array `applications` of non-empty strings, and, where present, a boolean `default` — what @LandingPage#applications says the App Manager needs. (3) placeholders: the set of `{{NAME}}` tokens in each template equals the set @LandingPage#index#run replaces (LANG, YEAR, SIZE_STANDARD_PART, SIZE_NVIDIA_PART, CHECKSUM_STANDARD, CHECKSUM_NVIDIA), reporting any missing or unknown one per template. (4) render: copies index.php and templates/ into a temporary directory (removed on exit), adds iso/ with a sparse 2 GiB borshevik-stable.iso made by truncate and a borshevik-stable.iso-CHECKSUM holding '<64 hex>  borshevik-stable.iso', and no NVIDIA files; renders it with `php -r` setting $_GET['lang'] and $_SERVER['HTTP_ACCEPT_LANGUAGE'] before including index.php, for three cases — lang=ru, Accept-Language 'ru-RU,ru;q=0.9,en;q=0.8' with no lang, and Accept-Language 'de' with no lang — expecting html lang ru, ru and en respectively. In every case the output must contain the standard ISO's ' · 2.0 GB' and its checksum, must not contain an NVIDIA size (the NVIDIA ISO is absent), and must contain no '{{' at all."
+        description: "Runs every check, printing 'ok <name>' or 'FAIL <name>: <reason>' for each, keeps going after a failure, and exits 1 if any failed, else prints 'all checks pass' and exits 0. (1) php-syntax: `php -l` of index.php, download.php and iso.php. (2) applications-json: jq asserts the file is a non-empty array whose every entry has a non-empty string `name`, a non-empty array `applications` of non-empty strings, and, where present, a boolean `default` — what @LandingPage#applications says the App Manager needs. (3) placeholders: the set of `{{NAME}}` tokens in each template equals the set @LandingPage#index#run replaces (LANG, YEAR, ISO_STANDARD_FILE, ISO_NVIDIA_FILE, SIZE_STANDARD_PART, SIZE_NVIDIA_PART, CHECKSUM_STANDARD, CHECKSUM_NVIDIA), reporting any missing or unknown one per template. (4) offered-isos: iso.php returns exactly the keys `standard` and `nvidia`, the standard name matches `^borshevik-[0-9]{8}(-[0-9]+)?\\.iso$` and the NVIDIA one `^borshevik-nvidia-[0-9]{8}(-[0-9]+)?\\.iso$` — which also keeps them from ever being borshevik-stable.iso or borshevik-nvidia-stable.iso, the permanent links, whose redirect would then point at itself. (5) htaccess: .htaccess holds, verbatim, the four rewrite rules @LandingPage#htaccess lists. (6) render: copies index.php, iso.php and templates/ into a temporary directory, adds iso/ with a sparse 2 GiB file under the offered standard name made by truncate and its -CHECKSUM holding '<64 hex>  <name>', and nothing under the NVIDIA name; renders it with `php -r` setting $_GET['lang'] and $_SERVER['HTTP_ACCEPT_LANGUAGE'] before including index.php, for three cases — lang=ru, Accept-Language 'ru-RU,ru;q=0.9,en;q=0.8' with no lang, and Accept-Language 'de' with no lang — expecting html lang ru, ru and en respectively. In every case the output must link to /iso/<offered standard name> and /iso/<offered NVIDIA name>, contain the standard ISO's ' · 2.0 GB' and its checksum, show no second size (the NVIDIA file is absent), and contain no '{{' at all. (7) download: serves a copy of download.php and iso.php with `php -S` on a free local port and asks it, with curl and without following redirects, for variant=standard, variant=nvidia, variant=standard&file=checksum and variant=bogus, expecting 302 to /iso/<standard name>, 302 to /iso/<NVIDIA name>, 302 to /iso/<standard name>-CHECKSUM, and 404; the server is stopped on exit."
   - id: index
     type: @Script
     interpreter: php
     src: index.php
-    description: "Entry point for every request to `/`. Reads the ISO metadata, picks the language, fills the chosen template and sends it. Stateless: nothing is cached between requests, so a new ISO or checksum in `iso/` shows up on the next page load."
+    description: "Entry point for every request to `/`. Reads which ISOs are offered and their metadata, picks the language, fills the chosen template and sends it. Stateless: nothing is cached between requests, so a switch to other ISOs shows up on the next page load after the deploy."
     functions:
       - id: read_checksum
         description: "Argument: filename, a name inside `iso/` next to index.php. Returns '' when the file is missing or unreadable, or when its trimmed content is empty. Otherwise splits the trimmed content on runs of whitespace and returns the first token — the hash, as the `-CHECKSUM` files written by sha256sum carry `<hash>  <iso name>` — HTML-escaped with htmlspecialchars(ENT_QUOTES | ENT_SUBSTITUTE, UTF-8)."
@@ -35,7 +35,25 @@ components:
       - id: pick_locale
         description: "Arguments: supported, the list of language codes templates exist for; default, the fallback (default 'en'). First the `lang` query parameter: when it is a string, it is lowercased and trimmed, and its part before the first '-' is returned if supported. Otherwise the Accept-Language header: empty or absent returns default; else each comma-separated part is trimmed, empty parts are skipped, a ';q=' suffix is split off and parsed as a float weight (1.0 when absent), and the tag is lowercased. Candidates are sorted by weight, highest first, and the first whose base (part before '-') is supported is returned. When none is, default."
       - id: run
-        description: "Top-level script body. Reads the checksum of borshevik-stable.iso-CHECKSUM and borshevik-nvidia-stable.iso-CHECKSUM and the size of borshevik-stable.iso and borshevik-nvidia-stable.iso. Picks the language with pick_locale over the keys of the template map ('en' → templates/en.html, 'ru' → templates/ru.html), falling back to the English template if the chosen one is unreadable. If file_get_contents of the template fails, answers 500 with text/plain 'Template load error' and exits. Otherwise replaces the placeholders with strtr — {{LANG}} (escaped language code), {{YEAR}} (date('Y')), {{SIZE_STANDARD_PART}} and {{SIZE_NVIDIA_PART}} (' · ' followed by the escaped size, or '' when the size is unknown, so the button reads just 'Download'), {{CHECKSUM_STANDARD}} and {{CHECKSUM_NVIDIA}} (the checksum, or '' when unknown) — and sends the result with headers Content-Type: text/html; charset=utf-8, Vary: Accept-Language, and Content-Language set to the chosen language."
+        description: "Top-level script body. Loads the offered names with `require __DIR__ . '/iso.php'` (@LandingPage#offered-isos). Reads the checksum of `<standard name>-CHECKSUM` and `<NVIDIA name>-CHECKSUM` and the size of the two ISOs. Picks the language with pick_locale over the keys of the template map ('en' → templates/en.html, 'ru' → templates/ru.html), falling back to the English template if the chosen one is unreadable. If file_get_contents of the template fails, answers 500 with text/plain 'Template load error' and exits. Otherwise replaces the placeholders with strtr — {{LANG}} (escaped language code), {{YEAR}} (date('Y')), {{ISO_STANDARD_FILE}} and {{ISO_NVIDIA_FILE}} (the offered names, rawurlencoded, for the links), {{SIZE_STANDARD_PART}} and {{SIZE_NVIDIA_PART}} (' · ' followed by the escaped size, or '' when the size is unknown, so the button reads just 'Download'), {{CHECKSUM_STANDARD}} and {{CHECKSUM_NVIDIA}} (the checksum, or '' when unknown) — and sends the result with headers Content-Type: text/html; charset=utf-8, Vary: Accept-Language, and Content-Language set to the chosen language."
+  - id: offered-isos
+    type: @ConfigFile
+    src: iso.php
+    format: PHP returning an array
+    description: "Which installer images the site offers — the one place that says so, read by @LandingPage#index and @LandingPage#download. Returns `['standard' => '<file name>', 'nvidia' => '<file name>']`, names of files in @LandingPage#iso-directory. Switching the site to newly uploaded ISOs is a change to these two names, committed and deployed like any change; @BorshevikLandingWorkflow#deploy refuses to deploy names whose ISO or -CHECKSUM is not on the server, so a switch cannot break the download buttons. Contains no logic and prints nothing, so requesting /iso.php directly shows an empty page."
+  - id: download
+    type: @Script
+    interpreter: php
+    src: download.php
+    description: "Where the permanent ISO links end up (@LandingPage#htaccess rewrites them here): redirects to the file currently offered."
+    functions:
+      - id: run
+        description: "Loads the offered names from iso.php. Reads `variant` from the query; when it is not a string naming a key of that array, answers 404 with text/plain 'Not found' and exits. Otherwise takes that variant's file name, appends '-CHECKSUM' when the `file` query parameter is exactly 'checksum', and answers 302 with `Location: /iso/<rawurlencoded name>` and `Cache-Control: no-store`, so neither browsers nor proxies keep sending people to an ISO the site no longer offers."
+  - id: htaccess
+    type: @ConfigFile
+    src: .htaccess
+    format: Apache/LiteSpeed rewrite rules
+    description: "Keeps the ISO links that have been published for years — https://borshevik.org/iso/borshevik-stable.iso, the NVIDIA one, and their -CHECKSUM files, all used by the borshevik README and anywhere else people copied them — pointing at whatever the site offers now, instead of at a file that may be long gone. `RewriteEngine On` and four internal rewrites, each ending in [L]: `^iso/borshevik-stable\\.iso$` → `download.php?variant=standard`, `^iso/borshevik-stable\\.iso-CHECKSUM$` → `download.php?variant=standard&file=checksum`, `^iso/borshevik-nvidia-stable\\.iso$` → `download.php?variant=nvidia`, `^iso/borshevik-nvidia-stable\\.iso-CHECKSUM$` → `download.php?variant=nvidia&file=checksum`. The rules match the URL whether or not a file of that name exists, so old files still lying under those names on the server are never served again."
   - id: page
     type: @View
     description: "The page both templates render — templates/en.html and templates/ru.html carry the same markup and differ only in text, `alt` and `aria-label` wording. Each is a complete HTML document with `lang=\"{{LANG}}\"`, title 'Borshevik Linux', a meta description, borshevik_logo.svg as the favicon and style.css as the stylesheet. Adding a language means adding a template with the same markup and placeholders and registering it in the template map of @LandingPage#index#run."
@@ -51,6 +69,10 @@ components:
             description: the chosen language code, set as the html element's lang
           - id: YEAR
             description: the current year, in the footer
+          - id: ISO_STANDARD_FILE
+            description: file name of the offered standard ISO, in the download button's href
+          - id: ISO_NVIDIA_FILE
+            description: file name of the offered NVIDIA ISO, in its button's href
           - id: SIZE_STANDARD_PART
             description: "' · 2.7 GB'-style suffix of the standard download button, or empty when the ISO is missing"
           - id: SIZE_NVIDIA_PART
@@ -75,11 +97,11 @@ components:
       - id: download-standard
         type: @Button
         label: "Download{{SIZE_STANDARD_PART}} — subtitle 'Standard image · AMD / Intel graphics'"
-        description: A link styled as a button to /iso/borshevik-stable.iso. Below it, 'Checksum:' and {{CHECKSUM_STANDARD}} in a code element.
+        description: A link styled as a button straight to /iso/{{ISO_STANDARD_FILE}}, the file itself rather than the permanent link, so a download never goes through a redirect. Below it, 'Checksum:' and {{CHECKSUM_STANDARD}} in a code element.
       - id: download-nvidia
         type: @Button
         label: "Download (NVIDIA){{SIZE_NVIDIA_PART}} — subtitle 'NVIDIA image · proprietary drivers included'"
-        description: A link styled as a button to /iso/borshevik-nvidia-stable.iso. Below it, 'Checksum:' and {{CHECKSUM_NVIDIA}} in a code element.
+        description: A link styled as a button straight to /iso/{{ISO_NVIDIA_FILE}}. Below it, 'Checksum:' and {{CHECKSUM_NVIDIA}} in a code element.
       - id: media-writer
         type: @Label
         description: A note that Fedora Media Writer may be needed to write the image to a USB drive, with links to its GitHub releases (macOS / Windows) and to its Flathub page (Linux).
@@ -105,7 +127,7 @@ components:
   - id: iso-directory
     type: @Folder
     path: <site root on the server>/iso
-    description: "The installer images, next to index.php on the server and nowhere else — not in the repository, and never written by @BorshevikLandingWorkflow#deploy, which only adds and replaces the site's own files. They are the output of borshevik's build-iso workflow, copied here by hand after each ISO build. The web server serves them directly at /iso/<name>; index.php only reads their size and checksum."
+    description: "Every installer image the site has offered or is about to, next to index.php on the server and nowhere else — not in the repository, and never written by @BorshevikLandingWorkflow#deploy, which only adds and replaces the site's own files. borshevik's publish-iso workflow uploads each build here as `borshevik-<YYYYMMDD>-<run number>.iso` and `borshevik-nvidia-<YYYYMMDD>-<run number>.iso`, each with its `-CHECKSUM`, verified on the server; a name is never reused, so a file is never replaced while someone downloads it. Nothing is ever deleted automatically: images the site no longer offers stay until removed by hand, and must not be removed while @LandingPage#offered-isos still names them. The files named in the list below predate unique names: the four `*-stable.iso*` files were the only copies until 2026-09, and `borshevik-20260226.iso` and `borshevik-nvidia-20260226.iso` are hard links to the same data under unique names, made so the permanent links could start redirecting without a new build — their -CHECKSUM files are copies with the new name inside. The `*-stable.iso*` names are never served any more, since @LandingPage#htaccess rewrites those URLs, and can be deleted once nothing needs them."
     files:
       - id: borshevik-stable.iso
         path: <site root on the server>/iso/borshevik-stable.iso
@@ -119,10 +141,22 @@ components:
       - id: borshevik-nvidia-stable.iso-CHECKSUM
         path: <site root on the server>/iso/borshevik-nvidia-stable.iso-CHECKSUM
         format: sha256sum output — `<hash>  <iso name>`
+      - id: borshevik-20260226.iso
+        path: <site root on the server>/iso/borshevik-20260226.iso
+        format: ISO 9660
+      - id: borshevik-20260226.iso-CHECKSUM
+        path: <site root on the server>/iso/borshevik-20260226.iso-CHECKSUM
+        format: sha256sum output — `<hash>  <iso name>`
+      - id: borshevik-nvidia-20260226.iso
+        path: <site root on the server>/iso/borshevik-nvidia-20260226.iso
+        format: ISO 9660
+      - id: borshevik-nvidia-20260226.iso-CHECKSUM
+        path: <site root on the server>/iso/borshevik-nvidia-20260226.iso-CHECKSUM
+        format: sha256sum output — `<hash>  <iso name>`
 recipes:
   - id: run
     description: Serves the site from the working tree on this machine, so a change can be seen before it is committed
     instructions:
       - "PHP is not installed on the host, and is not needed: from the repository root, run on the host (through `flatpak-spawn --host` when the shell is sandboxed) `podman run -d --rm --name borshevik-landing-preview -p 8000:8000 -v \"$PWD\":/srv:Z,ro -w /srv registry.fedoraproject.org/fedora-minimal:44 sh -c 'microdnf -y -q install php-cli jq >/dev/null 2>&1 && exec php -S 0.0.0.0:8000'`. The image comes from Fedora's registry because this machine's container signature policy rejects docker.io images, the official php one included. jq is installed only so @LandingPage#tests#checks can run in the same container with `podman exec borshevik-landing-preview bash tests/check.sh`. Installing takes up to a minute; the server is up once `podman logs borshevik-landing-preview` prints 'Development Server ... started'"
-      - "Tell the author to open http://127.0.0.1:8000 and http://127.0.0.1:8000/?lang=ru — not `localhost`, which can resolve to IPv6 and miss the published port. The working tree has no `iso/` folder, so both download buttons show no size and no checksum; that is expected here and not a defect"
+      - "Tell the author to open http://127.0.0.1:8000 and http://127.0.0.1:8000/?lang=ru — not `localhost`, which can resolve to IPv6 and miss the published port. The working tree has no `iso/` folder, so both download buttons show no size and no checksum; that is expected here and not a defect. php -S ignores .htaccess, so the permanent links cannot be tried here either"
       - Ask the author whether the change looks right; when they answer, stop it with `podman stop -t 2 borshevik-landing-preview` (php -S ignores SIGTERM, so a longer grace period only waits for the kill)
