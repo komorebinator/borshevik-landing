@@ -2,102 +2,104 @@
 <html lang="{{LANG}}">
 
 <head>
-  <meta charset="utf-8">
-  <title>Borshevik Linux</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/svg+xml" href="borshevik_logo.svg">
-  <meta name="description"
-    content="Borshevik is an immutable, laptop-first desktop image built on Fedora Atomic and the uBlue ecosystem, designed to be simple to use and ready to go right after installation.">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="utf-8">
+    <title>Borshevik Linux</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" href="borshevik_logo.svg">
+    <meta name="description"
+        content="Borshevik is an immutable, laptop-first desktop image built on Fedora Atomic and the uBlue ecosystem, designed to be simple to use and ready to go right after installation.">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <div class="shell">
-    <div class="card">
-      <main class="card-inner">
-        <div class="logo-wrap">
-          <div class="logo-circle">
-            <img src="borshevik_logo.svg" alt="Borshevik logo">
-          </div>
+    <div class="shell">
+        <div class="card">
+            <main class="card-inner">
+                <div class="logo-wrap">
+                    <div class="logo-circle">
+                        <img src="borshevik_logo.svg" alt="Borshevik logo">
+                    </div>
+                </div>
+
+                <header class="title">
+                    <h1>Borshevik</h1>
+                    <p>
+                        Borshevik is an immutable, laptop-first desktop image built on
+                        <a href="https://www.fedoraproject.org/atomic-desktops/" class="link" target="_blank"
+                            rel="noopener noreferrer">
+                            Fedora Atomic
+                        </a>
+                        and the
+                        <a href="https://universal-blue.org/" class="link" target="_blank" rel="noopener noreferrer">
+                            uBlue ecosystem
+                        </a>,
+                        designed to be simple to use and ready to go right after installation.
+                        It’s delivered as a single, read-only system image with atomic updates and easy rollbacks.
+                        It includes stock <b>Fedora GNOME</b> tuned with a small set of <b>GNOME Shell extensions</b>,
+                        plus multimedia support, <b>Chrome</b>, <b>Steam</b>, a built-in <b>VPN client</b> with VLESS
+                        and other
+                        censorship-resistant protocols, and a curated Flatpak set —
+                        so you can install it and get straight to work, even if you’re new to Linux.
+                    </p>
+                </header>
+                <section class="downloads" aria-label="Downloads">
+                    <div class="download-block">
+                        <a class="download-button" href="/iso/borshevik-stable.iso">
+                            <div class="download-content">
+                                <div class="download-title">Download{{SIZE_STANDARD_PART}}</div>
+                                <div class="download-subtitle">Standard image · AMD / Intel graphics</div>
+                            </div>
+                        </a>
+                        <div class="checksum">
+                            <span class="checksum-label">Checksum:</span>
+                            <code>{{CHECKSUM_STANDARD}}</code>
+                        </div>
+                    </div>
+
+                    <div class="download-block">
+                        <a class="download-button" href="/iso/borshevik-nvidia-stable.iso">
+                            <div class="download-content">
+                                <div class="download-title">Download (NVIDIA){{SIZE_NVIDIA_PART}}</div>
+                                <div class="download-subtitle">NVIDIA image · proprietary drivers included</div>
+                            </div>
+                        </a>
+                        <div class="checksum">
+                            <span class="checksum-label">Checksum:</span>
+                            <code>{{CHECKSUM_NVIDIA}}</code>
+                        </div>
+                    </div>
+                </section>
+
+                <p>
+                    You may also need <b>Fedora Media Writer</b> to write the image to a USB drive
+                </p>
+                <ul class="wmv-list">
+                    <li>
+                        <a class="link" href="https://github.com/FedoraQt/MediaWriter/releases/latest" target="_blank"
+                            rel="noopener noreferrer">
+                            MacOS / Windows
+                        </a>
+                    </li>
+                    <li>
+                        <a class="link" href="https://flathub.org/en/apps/org.fedoraproject.MediaWriter" target="_blank"
+                            rel="noopener noreferrer">
+                            Linux (Flathub)
+                        </a>
+                    </li>
+                </ul>
+
+                <footer class="footer">
+                    <div>© {{YEAR}} Borshevik project</div>
+                    <div>
+                        <a class="link" href="https://github.com/komorebinator/borshevik" target="_blank"
+                            rel="noopener noreferrer">
+                            More details on GitHub
+                        </a>
+                    </div>
+                </footer>
+            </main>
         </div>
-
-        <header class="title">
-          <h1>Borshevik</h1>
-          <p>
-            Borshevik is an immutable, laptop-first desktop image built on
-            <a href="https://www.fedoraproject.org/atomic-desktops/" class="link" target="_blank"
-              rel="noopener noreferrer">
-              Fedora Atomic
-            </a>
-            and the
-            <a href="https://universal-blue.org/" class="link" target="_blank" rel="noopener noreferrer">
-              uBlue ecosystem
-            </a>,
-            designed to be simple to use and ready to go right after installation.
-            It’s delivered as a single, read-only system image with atomic updates and easy rollbacks.
-            It includes stock <b>Fedora GNOME</b> tuned with a small set of <b>GNOME Shell extensions</b>,
-            plus multimedia support, <b>Chrome</b>, <b>Steam</b>, a built-in <b>VPN client</b> with VLESS and other
-            censorship-resistant protocols, and a curated Flatpak set —
-            so you can install it and get straight to work, even if you’re new to Linux.
-          </p>
-        </header>
-        <section class="downloads" aria-label="Downloads">
-          <div class="download-block">
-            <a class="download-button" href="/iso/borshevik-stable.iso">
-              <div class="download-content">
-                <div class="download-title">Download{{SIZE_STANDARD_PART}}</div>
-                <div class="download-subtitle">Standard image · AMD / Intel graphics</div>
-              </div>
-            </a>
-            <div class="checksum">
-              <span class="checksum-label">Checksum:</span>
-              <code>{{CHECKSUM_STANDARD}}</code>
-            </div>
-          </div>
-
-          <div class="download-block">
-            <a class="download-button" href="/iso/borshevik-nvidia-stable.iso">
-              <div class="download-content">
-                <div class="download-title">Download (NVIDIA){{SIZE_NVIDIA_PART}}</div>
-                <div class="download-subtitle">NVIDIA image · proprietary drivers included</div>
-              </div>
-            </a>
-            <div class="checksum">
-              <span class="checksum-label">Checksum:</span>
-              <code>{{CHECKSUM_NVIDIA}}</code>
-            </div>
-          </div>
-        </section>
-
-        <p>
-          You may also need <b>Fedora Media Writer</b> to write the image to a USB drive
-        </p>
-        <ul class="wmv-list">
-          <li>
-            <a class="link" href="https://github.com/FedoraQt/MediaWriter/releases/latest" target="_blank"
-              rel="noopener noreferrer">
-              MacOS / Windows
-            </a>
-          </li>
-          <li>
-            <a class="link" href="https://flathub.org/en/apps/org.fedoraproject.MediaWriter" target="_blank"
-              rel="noopener noreferrer">
-              Linux (Flathub)
-            </a>
-          </li>
-        </ul>
-
-        <footer class="footer">
-          <div>© {{YEAR}} Borshevik project</div>
-          <div>
-            <a class="link" href="https://github.com/komorebinator/borshevik" target="_blank" rel="noopener noreferrer">
-              More details on GitHub
-            </a>
-          </div>
-        </footer>
-      </main>
     </div>
-  </div>
 </body>
 
 </html>
