@@ -1,0 +1,21 @@
+name: Borshevik Landing
+description: The Borshevik Linux website — a single PHP landing page that picks English or Russian by Accept-Language and offers the standard and NVIDIA ISOs with their size and checksum.
+extends: @DuckspecProject
+terms_folder: BorshevikLanding/
+repository: https://github.com/komorebinator/borshevik-landing
+goals:
+  - Explain what Borshevik is in a few sentences and let a visitor download the right ISO in one click
+  - What is on main is what is live — no manual uploads of the site
+uses:
+  - https://github.com/komorebinator/duckspec
+references:
+  - repository: https://github.com/komorebinator/borshevik
+    description: The distribution this site presents. Its build-iso workflow produces the ISOs the download buttons point at; they are copied into the server's iso/ folder by hand, not by anything in this repository.
+software:
+  - @LandingPage
+workflow:
+  type: @BorshevikLandingWorkflow
+settings:
+  readme: ../README.md
+  src: ..
+  agents: AGENTS.md

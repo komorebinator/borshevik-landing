@@ -1,0 +1,87 @@
+description: "How work is done on the Borshevik website. The maintainer works straight on `main`, anyone else by pull request into it. `main` is the site: a push that touches the site's files deploys them to borshevik.org by itself, within a minute, with no build, no version and no release in between — so a change is looked at on this machine, served from the working tree, before it is committed, because once it is pushed visitors see it. The ISOs the page offers are not part of this: they are copied onto the server by hand, and deploying never touches them."
+extends: @DuckWorkflow
+main_branch: main
+src: .github/
+branches:
+  - id: main
+    description: "The live site. Every push to it that changes index.php, style.css, borshevik_logo.svg, templates/, share/ or the deploy workflow runs @BorshevikLandingWorkflow#deploy; a push that changes only the spec, README, AGENTS.md or LICENSE deploys nothing, since none of those are served. The maintainer pushes here directly; outside contributions arrive as pull requests into it."
+channels:
+  - id: live
+    from: main
+    description: "Whoever opens borshevik.org — people deciding whether to install Borshevik, and people who already have and came for an ISO. They get whatever `main` last deployed, with nothing in between to hold a change back, which is why a change is seen locally before it is pushed rather than after."
+steps:
+  - id: requested
+    description: Someone wants a change to the site, in an issue or in the conversation. It is clarified until nothing is left to guess, then written into the terms.
+    when: a request exists that the project's terms do not yet reflect
+  - id: specified
+    description: The change is in the spec, which is consistent, but the site's files do not carry it yet.
+    when: the change is present in the terms, verify_project is clean, and the sources do not yet implement it
+    operation: "@Software#build"
+  - id: implemented
+    description: "The working tree carries the change and the spec validates, but nobody has looked at the page yet. It is served from the working tree with @LandingPage#recipes#run and the author looks at both languages; they either confirm it or ask for more, which sends it back to `requested`. A change that serves nothing — the spec, README, AGENTS.md, LICENSE — has nothing to look at and goes straight to commit, which the reading of the steps reports as this step skipped."
+    when: the working tree carries the change, @DuckspecProject#validate passes, tests/check.sh exits 0, it is not committed, and the author has not yet confirmed it in the locally served page
+    operation: "@Software#run"
+  - id: tried_locally
+    description: The author has seen the change in the locally served page and confirmed it, but nothing is recorded yet.
+    when: the working tree carries the change, validates, and is not committed, and the author has confirmed it in the locally served page
+    operation: "@Git#commit"
+  - id: committed
+    description: The change is recorded locally and has reached no one. Pushing it is publishing it, when it touches the site's files.
+    when: local commits carry the change and are not on the remote
+    operation: "@Git#push(branch=main)"
+  - id: in_review
+    description: "An outside contribution: a pull request into main carries the change. The maintainer reads it with @GitHub#review_pull_request and serves the pull request's head locally with @LandingPage#recipes#run before merging, since merging is deploying."
+    when: an open pull request into main carries the change
+    operation: "@GitHub#merge_pull_request"
+  - id: on_main
+    description: "The change is on main and not yet on the site. The push or merge started @BorshevikLandingWorkflow#deploy by itself; nothing needs doing unless that run failed, or the change was pushed while the deploy secrets were missing — then the operation deploys main as it stands. A change that serves nothing stays here for good, which is correct: the site was never meant to carry it."
+    when: main carries a change to the site's files and no successful run of deploy.yml has deployed a commit containing it
+    operation: "@GitHub#run_workflow(workflow=deploy.yml, ref=main)"
+  - id: live
+    description: borshevik.org serves the change.
+    when: a successful run of deploy.yml deployed a commit of main that contains the change
+components:
+  - id: deploy
+    type: @Pipeline
+    platform: GitHub Actions
+    src: .github/workflows/deploy.yml
+    triggers:
+      - "push to main, filtered to the paths the site is made of: index.php, style.css, borshevik_logo.svg, templates/**, share/**, plus tests/check.sh and .github/workflows/deploy.yml itself, so a change to how the site is checked or deployed is tried at once"
+      - workflow_dispatch, to deploy main as it stands
+    jobs:
+      - "deploy — one job on ubuntu-latest, `permissions: contents: read`, in the concurrency group `deploy` with cancel-in-progress false, so two quick pushes deploy one after the other in order rather than racing over the same files. Steps: (1) actions/checkout, pinned by commit SHA. (2) `bash tests/check.sh` (@LandingPage#tests#checks) with the runner's own php and jq, so a broken index.php, a broken template or an applications.json the App Manager would refuse fails the run before anything is uploaded, and the site — and the App Manager on every new install — keeps its last working version. (3) copy index.php, style.css, borshevik_logo.svg, templates/ and share/ — what is served and nothing else — into a fresh _site/ folder. (4) write DEPLOY_SSH_KEY to ~/.ssh/deploy_key (mode 600) and DEPLOY_KNOWN_HOSTS to ~/.ssh/known_hosts, both with printf so a multi-line secret is written as is. (5) `rsync -rlvz --checksum --chmod=D755,F644 -e \"ssh -i $HOME/.ssh/deploy_key -p <DEPLOY_PORT, 22 when empty> -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes\" _site/ <DEPLOY_USER>@<DEPLOY_HOST>:<DEPLOY_PATH without a trailing slash>/`. --checksum compares content rather than timestamps, since a fresh checkout gives every file a new mtime and would otherwise re-send all of them. There is no --delete: see this component's guidelines. Every secret reaches the shell through `env:`, never by being expanded into the script text."
+    outputs:
+      - the site's files on the server under DEPLOY_PATH, replaced where they changed; nothing else there is touched
+    components:
+      - id: DEPLOY_HOST
+        type: @Secret
+        storage: GitHub Actions repository secret
+        used_by: the rsync step
+        description: The server's host name or IP address.
+      - id: DEPLOY_PORT
+        type: @Secret
+        storage: GitHub Actions repository secret; optional
+        used_by: the rsync step
+        description: The server's SSH port. Empty or unset means 22.
+      - id: DEPLOY_USER
+        type: @Secret
+        storage: GitHub Actions repository secret
+        used_by: the rsync step
+        description: The account the site's files belong to on the server.
+      - id: DEPLOY_PATH
+        type: @Secret
+        storage: GitHub Actions repository secret
+        used_by: the rsync step
+        description: "Absolute path of the site root on the server — the folder that holds index.php and iso/. Kept as a secret only so the server's layout is not published with the repository."
+      - id: DEPLOY_SSH_KEY
+        type: @Secret
+        storage: GitHub Actions repository secret
+        used_by: the SSH setup step
+        description: "Private half of an ed25519 key pair made for deploying and nothing else, without a passphrase. Its public half is the only line it adds to DEPLOY_USER's ~/.ssh/authorized_keys on the server, so revoking deploy access is deleting that line, without touching the maintainer's own keys."
+      - id: DEPLOY_KNOWN_HOSTS
+        type: @Secret
+        storage: GitHub Actions repository secret
+        used_by: the SSH setup step
+        description: "The server's host key lines as `ssh-keyscan -p <port> <host>` prints them, checked once against the server's real fingerprint when the secret is set. With StrictHostKeyChecking=yes the runner then refuses any other host, instead of trusting whatever answers at deploy time — which is all running ssh-keyscan inside the job would do."
+    guidelines:
+      - "Never add --delete, or anything else that removes files on the server. The site root also holds iso/, which is not in the repository and is gigabytes that took an ISO build to produce, and it may hold whatever the host itself keeps there; a deploy that mirrors _site/ exactly would delete all of it. The price is that a file removed from the repository stays on the server until someone removes it there by hand — say so in the commit that removes it."

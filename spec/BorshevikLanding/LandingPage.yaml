@@ -1,0 +1,128 @@
+name: Borshevik landing page
+description: "The whole of borshevik.org: one PHP script that renders one of two HTML templates, a stylesheet and the logo — plus one file that is no part of the page but is served from this site, the App Manager's application list (@LandingPage#applications). There is no framework, no build step and no database — the files in the repository are the files the web server runs, copied there by @BorshevikLandingWorkflow#deploy. The only thing the page reads at request time besides its own files is the server's `iso/` folder, which sits next to index.php, is not in the repository, and is filled by hand with the installer images @LandingPage#iso-directory describes; the page takes each ISO's size and checksum from there, so the numbers it shows are those of the file a visitor actually downloads."
+extends: @Software
+platform: PHP 8 behind any web server that runs index.php as the directory index (the production host is InterServer). Uses only the standard library.
+repository: https://github.com/komorebinator/borshevik-landing
+src: .
+tests:
+  - id: checks
+    description: "The failures that stay silent until a visitor or a new install hits them: index.php no longer parsing (the whole site answers 500), an applications.json the App Manager will refuse (first-login app installation breaks on every new machine), a placeholder missing from one template or misspelt in one (that value quietly vanishes from one language), and the render path itself — language choice, ISO size and checksum. Run by @BorshevikLandingWorkflow#deploy before anything is uploaded, and before every commit."
+    command: bash tests/check.sh
+    expect: exits 0 and prints 'all checks pass'
+  - id: seen-by-the-author
+    description: Manual. Whether the page reads and looks right in both languages is nothing a script can judge, so the author serves the changed working tree and looks at it. This is the @BorshevikLandingWorkflow `implemented` step.
+    command: "@LandingPage#recipes#run"
+    expect: the author confirms both http://127.0.0.1:8000 and http://127.0.0.1:8000/?lang=ru look right
+components:
+  - id: check
+    type: @ShellScript
+    interpreter: bash
+    src: tests/check.sh
+    description: "The script behind @LandingPage#tests#checks. Needs php-cli and jq, both present on the GitHub runner; on this machine it runs inside the same container @LandingPage#recipes#run uses, with jq installed alongside php-cli. Works from any current directory — it resolves the repository root from its own location — and never writes into the repository: rendering happens in a temporary copy."
+    functions:
+      - id: run
+        description: "Runs every check, printing 'ok <name>' or 'FAIL <name>: <reason>' for each, keeps going after a failure, and exits 1 if any failed, else prints 'all checks pass' and exits 0. (1) php-syntax: `php -l index.php`. (2) applications-json: jq asserts the file is a non-empty array whose every entry has a non-empty string `name`, a non-empty array `applications` of non-empty strings, and, where present, a boolean `default` — what @LandingPage#applications says the App Manager needs. (3) placeholders: the set of `{{NAME}}` tokens in each template equals the set @LandingPage#index#run replaces (LANG, YEAR, SIZE_STANDARD_PART, SIZE_NVIDIA_PART, CHECKSUM_STANDARD, CHECKSUM_NVIDIA), reporting any missing or unknown one per template. (4) render: copies index.php and templates/ into a temporary directory (removed on exit), adds iso/ with a sparse 2 GiB borshevik-stable.iso made by truncate and a borshevik-stable.iso-CHECKSUM holding '<64 hex>  borshevik-stable.iso', and no NVIDIA files; renders it with `php -r` setting $_GET['lang'] and $_SERVER['HTTP_ACCEPT_LANGUAGE'] before including index.php, for three cases — lang=ru, Accept-Language 'ru-RU,ru;q=0.9,en;q=0.8' with no lang, and Accept-Language 'de' with no lang — expecting html lang ru, ru and en respectively. In every case the output must contain the standard ISO's ' · 2.0 GB' and its checksum, must not contain an NVIDIA size (the NVIDIA ISO is absent), and must contain no '{{' at all."
+  - id: index
+    type: @Script
+    interpreter: php
+    src: index.php
+    description: "Entry point for every request to `/`. Reads the ISO metadata, picks the language, fills the chosen template and sends it. Stateless: nothing is cached between requests, so a new ISO or checksum in `iso/` shows up on the next page load."
+    functions:
+      - id: read_checksum
+        description: "Argument: filename, a name inside `iso/` next to index.php. Returns '' when the file is missing or unreadable, or when its trimmed content is empty. Otherwise splits the trimmed content on runs of whitespace and returns the first token — the hash, as the `-CHECKSUM` files written by sha256sum carry `<hash>  <iso name>` — HTML-escaped with htmlspecialchars(ENT_QUOTES | ENT_SUBSTITUTE, UTF-8)."
+      - id: read_iso_size_gb
+        description: "Argument: filename inside `iso/`. Returns '' when the file is missing or unreadable, or when filesize() fails or reports 0 or less. Otherwise divides the byte count by 1024³ and returns it formatted with one decimal and a dot separator, no thousands separator, followed by ' GB' (e.g. '2.7 GB')."
+      - id: pick_locale
+        description: "Arguments: supported, the list of language codes templates exist for; default, the fallback (default 'en'). First the `lang` query parameter: when it is a string, it is lowercased and trimmed, and its part before the first '-' is returned if supported. Otherwise the Accept-Language header: empty or absent returns default; else each comma-separated part is trimmed, empty parts are skipped, a ';q=' suffix is split off and parsed as a float weight (1.0 when absent), and the tag is lowercased. Candidates are sorted by weight, highest first, and the first whose base (part before '-') is supported is returned. When none is, default."
+      - id: run
+        description: "Top-level script body. Reads the checksum of borshevik-stable.iso-CHECKSUM and borshevik-nvidia-stable.iso-CHECKSUM and the size of borshevik-stable.iso and borshevik-nvidia-stable.iso. Picks the language with pick_locale over the keys of the template map ('en' → templates/en.html, 'ru' → templates/ru.html), falling back to the English template if the chosen one is unreadable. If file_get_contents of the template fails, answers 500 with text/plain 'Template load error' and exits. Otherwise replaces the placeholders with strtr — {{LANG}} (escaped language code), {{YEAR}} (date('Y')), {{SIZE_STANDARD_PART}} and {{SIZE_NVIDIA_PART}} (' · ' followed by the escaped size, or '' when the size is unknown, so the button reads just 'Download'), {{CHECKSUM_STANDARD}} and {{CHECKSUM_NVIDIA}} (the checksum, or '' when unknown) — and sends the result with headers Content-Type: text/html; charset=utf-8, Vary: Accept-Language, and Content-Language set to the chosen language."
+  - id: page
+    type: @View
+    description: "The page both templates render — templates/en.html and templates/ru.html carry the same markup and differ only in text, `alt` and `aria-label` wording. Each is a complete HTML document with `lang=\"{{LANG}}\"`, title 'Borshevik Linux', a meta description, borshevik_logo.svg as the favicon and style.css as the stylesheet. Adding a language means adding a template with the same markup and placeholders and registering it in the template map of @LandingPage#index#run."
+    components:
+      - id: en
+        type: @Template
+        src: templates/en.html
+        engine: "plain `{{NAME}}` placeholders replaced by PHP's strtr in @LandingPage#index#run — no conditionals, loops or escaping of its own; every value is escaped before it is substituted"
+        output_format: HTML
+        description: English text of the page.
+        variables:
+          - id: LANG
+            description: the chosen language code, set as the html element's lang
+          - id: YEAR
+            description: the current year, in the footer
+          - id: SIZE_STANDARD_PART
+            description: "' · 2.7 GB'-style suffix of the standard download button, or empty when the ISO is missing"
+          - id: SIZE_NVIDIA_PART
+            description: the same suffix for the NVIDIA download button
+          - id: CHECKSUM_STANDARD
+            description: the standard ISO's checksum, or empty
+          - id: CHECKSUM_NVIDIA
+            description: the NVIDIA ISO's checksum, or empty
+      - id: ru
+        type: @Template
+        src: templates/ru.html
+        engine: the same as @LandingPage#page#en
+        output_format: HTML
+        description: Russian text of the page. Carries exactly the placeholders of @LandingPage#page#en; one missing here simply leaves that value off the Russian page, with no error anywhere.
+      - id: logo
+        type: @Image
+        description: The logo in a round frame at the top of the card, from borshevik_logo.svg.
+      - id: title
+        type: @Label
+        label: Borshevik
+        description: The page's h1, followed by a paragraph saying what Borshevik is — built on Fedora Atomic and uBlue (both linked), a single read-only image with atomic updates and rollbacks, stock Fedora GNOME with a few Shell extensions, multimedia, Chrome, Steam, a VPN client with VLESS and other censorship-resistant protocols, and a curated Flatpak set.
+      - id: download-standard
+        type: @Button
+        label: "Download{{SIZE_STANDARD_PART}} — subtitle 'Standard image · AMD / Intel graphics'"
+        description: A link styled as a button to /iso/borshevik-stable.iso. Below it, 'Checksum:' and {{CHECKSUM_STANDARD}} in a code element.
+      - id: download-nvidia
+        type: @Button
+        label: "Download (NVIDIA){{SIZE_NVIDIA_PART}} — subtitle 'NVIDIA image · proprietary drivers included'"
+        description: A link styled as a button to /iso/borshevik-nvidia-stable.iso. Below it, 'Checksum:' and {{CHECKSUM_NVIDIA}} in a code element.
+      - id: media-writer
+        type: @Label
+        description: A note that Fedora Media Writer may be needed to write the image to a USB drive, with links to its GitHub releases (macOS / Windows) and to its Flathub page (Linux).
+      - id: footer
+        type: @Label
+        description: '© {{YEAR}} Borshevik project, and a link to the borshevik repository on GitHub.'
+  - id: style
+    type: @File
+    src: style.css
+    format: CSS
+    description: "The page's only stylesheet. Dark theme only, colours as custom properties on :root (--bg, --card-inner, --text, --muted and four --border-grad-* stops for the card's gradient border). A centred column 640px wide at most, a card with a gradient border, the round logo frame, download buttons with a hover effect drawn by ::before/::after, the checksum line, the footer and the Media Writer list. Two breakpoints: wider padding from 640px up, tighter spacing at 480px and below."
+  - id: logo-file
+    type: @Graphic
+    src: borshevik_logo.svg
+    format: SVG
+    role: logo
+    description: The Borshevik logo, shown on the page and used as its favicon.
+  - id: applications
+    type: @ConfigFile
+    src: share/applications.json
+    format: JSON
+    description: "Not part of the page: the curated application list Borshevik's App Manager downloads from https://borshevik.org/share/applications.json on first login, kept here because this site is where it is served from. Changing it changes what every new Borshevik install offers, from the next deploy on, with no image rebuild. A JSON array of categories, shown in the App Manager in this order. Each category: `name` — the English name, and the fallback for any language the entry lacks; an optional key per language code (`ru`, `en`) with the name in that language; `default` — true when the category is preselected; `applications` — Flathub application ids, installed in this order. The App Manager drops a category whose localized name or `applications` is empty, and shows an error page when the file is not an array or has no usable category, so a malformed edit here breaks first-login app installation on every machine."
+  - id: iso-directory
+    type: @Folder
+    path: <site root on the server>/iso
+    description: "The installer images, next to index.php on the server and nowhere else — not in the repository, and never written by @BorshevikLandingWorkflow#deploy, which only adds and replaces the site's own files. They are the output of borshevik's build-iso workflow, copied here by hand after each ISO build. The web server serves them directly at /iso/<name>; index.php only reads their size and checksum."
+    files:
+      - id: borshevik-stable.iso
+        path: <site root on the server>/iso/borshevik-stable.iso
+        format: ISO 9660
+      - id: borshevik-stable.iso-CHECKSUM
+        path: <site root on the server>/iso/borshevik-stable.iso-CHECKSUM
+        format: sha256sum output — `<hash>  <iso name>`
+      - id: borshevik-nvidia-stable.iso
+        path: <site root on the server>/iso/borshevik-nvidia-stable.iso
+        format: ISO 9660
+      - id: borshevik-nvidia-stable.iso-CHECKSUM
+        path: <site root on the server>/iso/borshevik-nvidia-stable.iso-CHECKSUM
+        format: sha256sum output — `<hash>  <iso name>`
+recipes:
+  - id: run
+    description: Serves the site from the working tree on this machine, so a change can be seen before it is committed
+    instructions:
+      - "PHP is not installed on the host, and is not needed: from the repository root, run on the host (through `flatpak-spawn --host` when the shell is sandboxed) `podman run -d --rm --name borshevik-landing-preview -p 8000:8000 -v \"$PWD\":/srv:Z,ro -w /srv registry.fedoraproject.org/fedora-minimal:44 sh -c 'microdnf -y -q install php-cli jq >/dev/null 2>&1 && exec php -S 0.0.0.0:8000'`. The image comes from Fedora's registry because this machine's container signature policy rejects docker.io images, the official php one included. jq is installed only so @LandingPage#tests#checks can run in the same container with `podman exec borshevik-landing-preview bash tests/check.sh`. Installing takes up to a minute; the server is up once `podman logs borshevik-landing-preview` prints 'Development Server ... started'"
+      - "Tell the author to open http://127.0.0.1:8000 and http://127.0.0.1:8000/?lang=ru — not `localhost`, which can resolve to IPv6 and miss the published port. The working tree has no `iso/` folder, so both download buttons show no size and no checksum; that is expected here and not a defect"
+      - Ask the author whether the change looks right; when they answer, stop it with `podman stop -t 2 borshevik-landing-preview` (php -S ignores SIGTERM, so a longer grace period only waits for the kill)

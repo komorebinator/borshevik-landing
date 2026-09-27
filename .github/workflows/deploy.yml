@@ -1,0 +1,59 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - index.php
+      - style.css
+      - borshevik_logo.svg
+      - templates/**
+      - share/**
+      - tests/check.sh
+      - .github/workflows/deploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+
+      - name: Check
+        run: bash tests/check.sh
+
+      - name: Collect site files
+        run: |
+          mkdir _site
+          cp -r index.php style.css borshevik_logo.svg templates share _site/
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # No --delete: the site root also holds iso/ and whatever the host keeps there.
+      - name: Upload
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          rsync -rlvz --checksum --chmod=D755,F644 \
+            -e "ssh -i $HOME/.ssh/deploy_key -p ${DEPLOY_PORT:-22} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes" \
+            _site/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH%/}/"
