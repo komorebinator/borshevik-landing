@@ -10,7 +10,7 @@ uses:
   - https://github.com/komorebinator/duckspec
 references:
   - repository: https://github.com/komorebinator/borshevik
-    description: The distribution this site presents. Its build-iso workflow produces the ISOs the download buttons point at; they are copied into the server's iso/ folder by hand, not by anything in this repository.
+    description: The distribution this site presents. Its build-iso workflow builds the ISOs the download buttons point at, and its publish-iso workflow uploads them to the server's iso/ folder; nothing in this repository uploads them.
 software:
   - @LandingPage
 workflow:
