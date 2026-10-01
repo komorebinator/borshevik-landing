@@ -40,6 +40,27 @@ else
     fail applications-json "share/applications.json is not an array of {name, applications[, default]} categories"
 fi
 
+# 2b. applications-v2.json is what the typed App Manager accepts: every category
+# keeps at least one app of a known type, and every such app has the keys its type needs
+if jq -e '
+    def str: type == "string" and length > 0;
+    def known: .type == "flatpak" or .type == "android";
+    def complete:
+        if .type == "flatpak" then (.id | str)
+        else (.id | str) and (.name | str) and (.icon | str) and (.url | str)
+             and (.sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+        end;
+    type == "array" and length > 0 and all(.[];
+        (.name | str)
+        and (.apps | type == "array" and any(.[]; known)
+             and all(.[]; (type == "object") and (.type | str) and ((known | not) or complete)))
+        and ((has("default") | not) or (.default | type == "boolean")))
+' share/applications-v2.json >/dev/null 2>&1; then
+    ok applications-v2-json
+else
+    fail applications-v2-json "share/applications-v2.json has a category without a usable app, or an app missing a key its type needs"
+fi
+
 # 3. every template carries exactly the placeholders index.php replaces
 expected="CHECKSUM_NVIDIA CHECKSUM_STANDARD ISO_NVIDIA_FILE ISO_STANDARD_FILE LANG SIZE_NVIDIA_PART SIZE_STANDARD_PART YEAR"
 for tpl in templates/*.html; do
