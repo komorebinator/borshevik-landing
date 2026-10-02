@@ -250,20 +250,5 @@
                 "id": "com.jeffser.Alpaca"
             }
         ]
-    },
-    {
-        "name": "Android",
-        "ru": "Android-приложения",
-        "default": false,
-        "apps": [
-            {
-                "type": "android",
-                "id": "com.aurora.store",
-                "name": "Aurora Store",
-                "icon": "https://gitlab.com/uploads/-/system/project/avatar/6922885/icon.png",
-                "url": "https://gitlab.com/-/project/6922885/uploads/245eec8867a47057cbc54535f73b32ee/AuroraStore-4.8.4.apk",
-                "sha256": "8a1ed9aa09631290da91cb793e0517b0f20dc70239ac94ae6682cd94f91a4bad"
-            }
-        ]
     }
 ]
