@@ -1,0 +1,43 @@
+# The installer from its first screen to the start of the installation, in Russian: the
+# language already chosen, the disk with encryption, the user, Begin Installation, the
+# installation's first seconds, and its end, the reboot button pressed - thirty seconds in
+# all. Each step follows as soon as the screen it needs is up and answering: the hub takes
+# up to three and a half seconds to come up after the first screen, the disk screen over a
+# second more before it takes a click, the other screens under one.
+0 move 1100 700
+0.1 glide 1372 870 0.4
+0.6 click 1372 870
+4.0 glide 820 378 0.5
+4.6 click 820 378
+6.4 glide 30 548 0.5
+7.0 click 30 548
+7.3 glide 56 49 0.5
+7.9 click 56 49
+# typed key by key, and given a moment after: the installer weighs a password's strength at
+# every key, and keys typed faster than that, or a click right after them, overtake it
+9.1 pace 0.1
+9.1 type cloudberry-tundra
+11.3 glide 780 386 0.3
+11.7 click 780 386
+11.9 type cloudberry-tundra
+14.1 glide 900 466 0.4
+14.6 click 900 466
+15.5 glide 1099 448 0.4
+16.0 click 1099 448
+16.6 type Lily
+17.3 glide 790 251 0.3
+17.7 click 790 251
+17.9 type northern-swamp-42
+20.1 glide 790 318 0.3
+20.5 click 790 318
+20.7 type northern-swamp-42
+22.9 glide 45 43 0.6
+23.6 click 45 43
+24.3 glide 1358 848 0.6
+25.0 click 1358 848
+# the installation, as long as it takes, until the reboot button turns blue; the video
+# keeps its first seconds and what comes after this wait (installer.sh)
+28.0 wait 1300 862 3181e4
+28.9 glide 1343 871 0.6
+29.6 click 1343 871
+30.0 end

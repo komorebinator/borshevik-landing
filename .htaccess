@@ -4,3 +4,11 @@ RewriteRule ^iso/borshevik-stable\.iso$ download.php?variant=standard [L]
 RewriteRule ^iso/borshevik-stable\.iso-CHECKSUM$ download.php?variant=standard&file=checksum [L]
 RewriteRule ^iso/borshevik-nvidia-stable\.iso$ download.php?variant=nvidia [L]
 RewriteRule ^iso/borshevik-nvidia-stable\.iso-CHECKSUM$ download.php?variant=nvidia&file=checksum [L]
+
+# Read by index.php, not to be fetched.
+RewriteRule ^(lib|templates|i18n|content)(/|$) - [F,L]
+
+# Every path that names no file is a page: /install, /news, /news/<slug>.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]
