@@ -23,8 +23,10 @@ function markdown_media(string $alt, string $src, string $base): string
         return e($alt);
     }
     $src = markdown_src($src, $base);
+    // a looping video, which the page's script starts once it is scrolled to: autoplay would
+    // have the browser download every video of the page as it opens (@LandingPage#layout)
     if (preg_match('~\.(mp4|webm)$~i', $src)) {
-        return '<video autoplay muted loop playsinline preload="metadata" src="' . e($src) . '"'
+        return '<video muted loop playsinline preload="metadata" data-loop src="' . e($src) . '"'
             . ($alt !== '' ? ' aria-label="' . e($alt) . '"' : '') . '></video>';
     }
     return '<img src="' . e($src) . '" alt="' . e($alt) . '" loading="lazy">';

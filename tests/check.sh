@@ -92,14 +92,16 @@ foreach (glob('posts/*', GLOB_ONLYDIR) as $dir) {
 }
 $report('posts', $p);
 
-// every image or video a page or post names is there
+// every image or video a page or post names is there, a walk-through's ::video line included
 $p = [];
 $docs = [];
 foreach (glob('content/*/*.md') as $f) $docs[$f] = 'media/';
 foreach (glob('posts/*/*.md') as $f) $docs[$f] = dirname($f) . '/';
 foreach ($docs as $f => $base) {
-    preg_match_all('~!\[[^\]]*\]\(([^)\s]+)\)~', file_get_contents($f), $m);
-    foreach ($m[1] as $src) {
+    $md = file_get_contents($f);
+    preg_match_all('~!\[[^\]]*\]\(([^)\s]+)\)~', $md, $m);
+    preg_match_all('~^::video\s+(\S+)~m', $md, $v);
+    foreach (array_merge($m[1], $v[1]) as $src) {
         if (preg_match('~^https?://~', $src)) continue;
         $path = $src[0] === '/' ? ltrim($src, '/') : $base . $src;
         if (!is_file($path)) $p[] = "$f names $src, which is not there";
@@ -172,7 +174,7 @@ $cases = [
     ["---", '<hr>'],
     ["::downloads\n\n::other", "[D]\n"],
     ["![Alt](x.webp)", '<figure><img src="/p/x.webp" alt="Alt" loading="lazy"><figcaption>Alt</figcaption></figure>'],
-    ["![V](/media/en/v.mp4)", '<figure><video autoplay muted loop playsinline preload="metadata" src="/media/en/v.mp4" aria-label="V"></video><figcaption>V</figcaption></figure>'],
+    ["![V](/media/en/v.mp4)", '<figure><video muted loop playsinline preload="metadata" data-loop src="/media/en/v.mp4" aria-label="V"></video><figcaption>V</figcaption></figure>'],
     ["::video en/w.mp4 How it goes\ntext", "<figure class=\"player\"><video controls muted playsinline preload=\"metadata\" data-play-in-view src=\"/p/en/w.mp4\" aria-label=\"How it goes\"></video><figcaption>How it goes</figcaption></figure>\n<p>text</p>"],
     ["::video javascript:a.mp4 J", 'J'],
     ["[s](/install) and [e](https://x.org)", '<p><a href="/install">s</a> and <a href="https://x.org" target="_blank" rel="noopener noreferrer">e</a></p>'],

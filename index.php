@@ -53,6 +53,9 @@ $directive = function (string $name) use ($t, $isos) {
 };
 
 [$page, $slug] = route($path);
+// the page's own address, built from what was routed rather than from the request, which may
+// carry anything: the language switch and og:url point here; a page not found, home
+$canonical = '/';
 $title = '';
 // what a link to the page shows in Telegram, X and the like: a few words and a picture
 $preview = ['description' => $t['meta_description'], 'image' => "/media/$lang/hero.webp", 'type' => 'website'];
@@ -74,6 +77,7 @@ switch ($page) {
         break;
 
     case 'install':
+        $canonical = $slug === 'rebase' ? '/install/rebase' : '/install';
         [$title, $md] = split_title((string)file_get_contents(__DIR__ . "/content/$lang/$slug.md"));
         $tabs = [];
         foreach (['install' => '/install', 'rebase' => '/install/rebase'] as $id => $href) {
@@ -88,6 +92,7 @@ switch ($page) {
         break;
 
     case 'news':
+        $canonical = '/news';
         $title = $t['news_title'];
         $body = render('news', ['t' => $t, 'items' => news_list($lang), 'link' => $link]);
         break;
@@ -95,6 +100,7 @@ switch ($page) {
     case 'post':
         $post = news_post((string)$slug, $lang);
         if ($post !== null) {
+            $canonical = '/news/' . rawurlencode($post['slug']);
             $section = 'news';
             $title = $post['title'];
             $first = markdown_first_image($post['body'], '/posts/' . $post['slug'] . '/');
@@ -130,7 +136,7 @@ echo render('layout', [
     'title' => $title,
     'preview' => $preview,
     'section' => $section,
-    'path' => $path,
+    'path' => $canonical,
     'body' => $body,
     'link' => $link,
     'header_links' => (require __DIR__ . '/links.php')[$lang] ?? [],

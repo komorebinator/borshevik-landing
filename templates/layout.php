@@ -17,7 +17,7 @@
     <meta property="og:type" content="<?= e($preview['type']) ?>">
     <meta property="og:title" content="<?= e($full_title) ?>">
     <meta property="og:description" content="<?= e($preview['description']) ?>">
-    <meta property="og:url" content="<?= e($origin . url($path === '' ? '/' : $path, $lang)) ?>">
+    <meta property="og:url" content="<?= e($origin . url($path, $lang)) ?>">
     <meta property="og:image" content="<?= e($origin . $preview['image']) ?>">
     <meta property="og:locale" content="<?= $lang === 'ru' ? 'ru_RU' : 'en_US' ?>">
     <meta name="twitter:card" content="summary_large_image">
@@ -44,7 +44,7 @@
                         <?= file_get_contents(__DIR__ . '/../icons/' . $l['id'] . '.svg') ?>
                     </a>
                 <?php endforeach; ?>
-                <a class="lang-switch" href="<?= e(url($path === '' ? '/' : $path, $other)) ?>" lang="<?= e($other) ?>" hreflang="<?= e($other) ?>"><?= e($t['other_language']) ?></a>
+                <a class="lang-switch" href="<?= e(url($path, $other)) ?>" lang="<?= e($other) ?>" hreflang="<?= e($other) ?>"><?= e($t['other_language']) ?></a>
             </div>
         </div>
     </header>
@@ -52,9 +52,17 @@
     <main class="site-main site-main-<?= e($section) ?>">
 <?= $body ?>
     </main>
-<?php if (str_contains($body, 'data-play-in-view')): ?>
+<?php if (str_contains($body, 'data-play-in-view') || str_contains($body, 'data-loop')): ?>
 
     <script>
+        // A looping video: started once a quarter of it is scrolled into view and paused when
+        // it leaves, so a page downloads only the videos its visitor scrolls to.
+        const loops = new IntersectionObserver(entries => entries.forEach(({ target, isIntersecting }) => {
+            if (isIntersecting) target.play().catch(() => {});
+            else target.pause();
+        }), { threshold: 0.25 });
+        document.querySelectorAll('video[data-loop]').forEach(video => loops.observe(video));
+
         // A walk-through video: the browser's controls swapped for the site's own - a play
         // button, a bar to scrub, the time - and the video started once half of it is
         // scrolled into view and paused when it leaves; once its viewer has paused it, or it
