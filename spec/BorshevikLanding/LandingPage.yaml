@@ -168,7 +168,7 @@ components:
       - id: send
         type: "@ShellScript"
         src: tools/telegram/send.sh
-        description: "Sends one post to one chat with the Bot API: @LandingPage#announce#render's media as an album, the files as they are, then its text with parse_mode HTML and the link preview off; fails on the first answer that is not ok, printing Telegram's description."
+        description: "Sends one post to one chat with the Bot API: @LandingPage#announce#render's text with parse_mode HTML and the link preview off, then its media, the files as they are, as an album replying to that text; fails on the first answer that is not ok, printing Telegram's description."
   - id: offered-isos
     type: "@ConfigFile"
     src: iso.php

@@ -11,6 +11,7 @@ on:
       - experimental
     paths:
       - posts/**
+      - tools/telegram/**
   workflow_dispatch:
     inputs:
       posts:
@@ -62,6 +63,11 @@ jobs:
             fi
             if [[ ! "$BEFORE" =~ ^0*$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
               POSTS="$(git diff --name-only --diff-filter=$filter "$BEFORE" HEAD -- "$paths" | cut -d/ -f2 | sort -u | tr '\n' ' ')"
+              # a change to the sending, on experimental, shows the newest post again
+              if [[ "$TARGET" == test ]] && ! git diff --quiet "$BEFORE" HEAD -- tools/telegram/; then
+                newest="$(ls posts | sort | tail -1)"
+                [[ " $POSTS " == *" $newest "* ]] || POSTS+="$newest "
+              fi
             fi
           fi
           echo "posts: ${POSTS:-none}, to $TARGET"

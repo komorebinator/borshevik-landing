@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Sends one post to one Telegram chat: its pictures and videos as an album, then its text.
+# Sends one post to one Telegram chat: its text, then its pictures and videos as an album
+# replying to it, so the album shows which post it belongs to.
 # See @LandingPage#announce#send in spec/. Needs php, curl, jq and ffprobe.
 # usage: TELEGRAM_BOT_TOKEN=... send.sh <post folder> <chat id or @channel> [en|ru]
 set -euo pipefail
@@ -13,8 +14,9 @@ api="${TELEGRAM_API:-https://api.telegram.org}/bot${TELEGRAM_BOT_TOKEN:?TELEGRAM
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-# a call that fails stops here, with Telegram's own words for why; values given with
-# --form-string, since -F reads one starting with @, as a channel's name does, as a file
+# a call that fails stops here, with Telegram's own words for why, else prints its answer;
+# values given with --form-string, since -F reads one starting with @, as a channel's name
+# does, as a file
 call() { # method, curl args...
     local answer
     answer="$(curl -sS "$api/$1" "${@:2}")"
@@ -22,10 +24,16 @@ call() { # method, curl args...
         echo "$1 failed: $(jq -r '.description // .' <<<"$answer")" >&2
         exit 1
     fi
+    printf '%s\n' "$answer"
 }
 
 php "$here/render.php" "$post" "$lang" >"$work/post.json"
 count="$(jq '.media | length' "$work/post.json")"
+
+text="$(call sendMessage -H 'Content-Type: application/json' -d "$(jq -c --arg chat "$chat" \
+    '{chat_id: $chat, text: .text, parse_mode: "HTML", link_preview_options: {is_disabled: true}}' \
+    "$work/post.json")" | jq .result.message_id)"
+reply="{\"message_id\":$text}"
 
 # the files as the post has them; each video with its own shape
 items=() files=() paths=()
@@ -53,12 +61,10 @@ if (( count == 1 )); then
     [[ "$type" == video ]] && extra=(-F "width=$(jq .width <<<"${items[0]}")" \
         -F "height=$(jq .height <<<"${items[0]}")" -F "duration=$(jq .duration <<<"${items[0]}")" \
         -F supports_streaming=true)
-    call "send${type^}" --form-string "chat_id=$chat" -F "$type=@${paths[0]}" "${extra[@]}"
+    call "send${type^}" --form-string "chat_id=$chat" --form-string "reply_parameters=$reply" \
+        -F "$type=@${paths[0]}" "${extra[@]}" >/dev/null
 elif (( count > 1 )); then
-    call sendMediaGroup --form-string "chat_id=$chat" --form-string "media=$(printf '%s\n' "${items[@]}" | jq -sc .)" "${files[@]}"
+    call sendMediaGroup --form-string "chat_id=$chat" --form-string "reply_parameters=$reply" \
+        --form-string "media=$(printf '%s\n' "${items[@]}" | jq -sc .)" "${files[@]}" >/dev/null
 fi
-
-call sendMessage -H 'Content-Type: application/json' -d "$(jq -c --arg chat "$chat" \
-    '{chat_id: $chat, text: .text, parse_mode: "HTML", link_preview_options: {is_disabled: true}}' \
-    "$work/post.json")"
 echo "sent $(basename "$post") to $chat"
