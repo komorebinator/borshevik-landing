@@ -1,6 +1,6 @@
 <?php
 return [
-    'meta_description' => 'Borshevik is an immutable, laptop-first Linux desktop built on Fedora Atomic and the uBlue ecosystem, simple to use and ready to go right after installation.',
+    'meta_description' => 'Borshevik is an immutable Linux for laptops and desktops, built on Fedora Atomic and the uBlue ecosystem, simple to use and ready to work right after installation.',
     'menu_label' => 'Main menu',
     'nav_home' => 'Home',
     'nav_install' => 'Install',
