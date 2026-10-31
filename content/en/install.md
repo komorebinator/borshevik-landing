@@ -54,5 +54,3 @@ It opens by itself on your first login — **GNOME** also offers a welcome tour,
 Moving from another computer? Open the **From another PC** tab and paste the configuration you copied there: the same apps get installed.
 
 ![The From another PC tab of the App Manager](en/app-manager-other-pc.webp)
-
-That's it. From here on, the **Image Manager** is where you update the system, turn on automatic updates and roll back.

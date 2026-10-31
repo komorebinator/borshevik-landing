@@ -116,6 +116,40 @@
         });
     </script>
 <?php endif; ?>
+<?php if (str_contains($body, '<pre>')): ?>
+
+    <script>
+        // A command's copy button: the block's text to the clipboard, and a check mark for two
+        // seconds to say it was taken.
+        const copied = document.documentElement.lang === 'ru'
+            ? { copy: 'Скопировать', done: 'Скопировано' }
+            : { copy: 'Copy', done: 'Copied' };
+        document.querySelectorAll('.prose pre').forEach(pre => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'copy-button';
+            button.setAttribute('aria-label', copied.copy);
+            button.title = copied.copy;
+            button.innerHTML = '<svg class="icon-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1.5 1.5 0 0 0-1.5-1.5h-5a1.5 1.5 0 0 0-1.5 1.5v5a1.5 1.5 0 0 0 1.5 1.5h.5"/></svg>'
+                + '<svg class="icon-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>';
+            pre.append(button);
+            let timer;
+            button.addEventListener('click', () => {
+                navigator.clipboard.writeText(pre.querySelector('code').textContent).then(() => {
+                    button.classList.add('done');
+                    button.setAttribute('aria-label', copied.done);
+                    button.title = copied.done;
+                    clearTimeout(timer);
+                    timer = setTimeout(() => {
+                        button.classList.remove('done');
+                        button.setAttribute('aria-label', copied.copy);
+                        button.title = copied.copy;
+                    }, 2000);
+                }).catch(() => {});
+            });
+        });
+    </script>
+<?php endif; ?>
 
 </body>
 

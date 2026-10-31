@@ -6,7 +6,7 @@
 
 ## What the system can do
 
-The home page covers everything **Borshevik** comes with: updates that never break the system and roll back in one step, **Android** apps, games, VPN, and the work done on **GNOME** — workspaces on the panel, window placement, translation of selected text, app search in any keyboard layout. Most sections come with a short video of how it works.
+The home page covers everything **Borshevik** can do: updates that never break the system, **Android** apps, games, VPN and our work on **GNOME** — from workspaces on the panel to translating selected text. Most sections come with a short video.
 
 ## Installation step by step
 
@@ -20,3 +20,5 @@ The site opens in your browser's language — English or Russian — and the swi
 
 
 ------------ you are here ------------
+
+More good news is on the way — stay tuned.

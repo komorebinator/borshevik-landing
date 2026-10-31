@@ -1,6 +1,6 @@
 # Android apps on Borshevik
 
-**Borshevik** now runs **Android** apps — in windows of their own, next to your desktop apps. Apps install from **Google Play** and keep themselves up to date, and notifications, **Google** sign-in and everything else that relies on **Google**'s services work.
+**Borshevik** now runs **Android** apps — in windows of their own, next to your desktop apps. **Google**'s services and **Google Play** work: apps install from there and keep themselves up to date.
 
 ## How to turn it on
 
@@ -15,13 +15,13 @@ It downloads about 1.4 GB: **Android** with **Google Play** and **Google**'s ser
 
 ## Registering with Google Play
 
-**Google** asks for the device to be registered with your account once. The **Android** tab shows the device ID and opens the registration page: paste the ID there, restart **Android** and sign in to **Google Play**.
+**Google** asks for the device to be registered with your account once. The **Android** tab shows the device ID and has a button that opens the registration page: paste the ID there and sign in to **Google Play**.
 
 ![Google Play registration on the Android tab](android-tab.en.webp)
 
 ## Installing APKs
 
-An APK downloaded from somewhere other than **Google Play** installs with a double click: the installer shows the package and its version and asks whether to install or update it.
+An APK downloaded from somewhere other than **Google Play** installs with a double click: the installer shows the package and its version and offers to install it — or to update it, if it is already installed.
 
 ![The APK installer asking whether to install F-Droid into Android](apk-install.en.webp)
 
@@ -33,4 +33,4 @@ An APK downloaded from somewhere other than **Google Play** installs with a doub
 
 ## Updates
 
-**Android** updates separately from the system, once a day and never over a metered connection, and rolling **Borshevik** back brings back the earlier **Android** too.
+**Android** updates separately from the system, once a day, and waits while you're on a phone's hotspot or another metered connection.
