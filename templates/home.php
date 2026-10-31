@@ -13,7 +13,7 @@
     <div class="tagline">
         <h2><?= e($t['tagline_title']) ?></h2>
         <?php foreach (preg_split('~\n\s*\n~', $t['tagline']) as $para): ?>
-            <p><?= e(trim($para)) ?></p>
+            <p><?= markdown_inline(trim($para), "") ?></p>
         <?php endforeach; ?>
     </div>
 </section>

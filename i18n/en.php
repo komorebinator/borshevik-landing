@@ -9,7 +9,7 @@ return [
     'logo_alt' => 'Borshevik logo',
     'slogan' => 'Deep roots, fresh growth',
     'tagline_title' => 'Meet Borshevik',
-    'tagline' => "Borshevik is Linux for laptops and desktops that is ready to work the moment it is installed: nothing to set up, no drivers or codecs to hunt for.\n\nThe system comes as a single image that updates cannot break: a new version arrives whole and takes effect at the next restart, and if anything goes wrong, one click takes you back to the previous one.\n\nInside is stock GNOME with extensions made for Borshevik alone, Chrome, Steam, Android apps from Google Play, a VPN client that gets around blocking, and a selection of apps offered on your first login. A good fit even if you are new to Linux.",
+    'tagline' => "**Borshevik** is **Linux** that is ready to work the moment it is installed, even if you have never used **Linux** before.\n\nThe desktop is **GNOME** with extensions of our own: hybrid auto-tiling puts every window in its place, any selected text translates right on screen, and app search works in any keyboard layout — plus plenty of other useful touches.\n\nOut of the box: **Chrome**, **Steam**, codecs and a VPN that gets around blocking, and **Android** apps from **Google Play** if you want them. Updates can't break the system: one click takes you back to the previous version.",
     'hero_screenshot_alt' => 'The App Manager welcoming a new user to Borshevik Linux, with app categories to install and Android support',
     'downloads_label' => 'Downloads',
     'download_standard' => 'Download',

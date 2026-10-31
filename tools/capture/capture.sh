@@ -348,7 +348,18 @@ cmd_shot() {
 #   <t> wait <x> <y> <rrggbb>  the steps after it held, the filming going on, until that
 #                              pixel has that colour: for what takes as long as it takes,
 #                              and cut out of the video by cut
-#   <t> hold <x> <y> <rrggbb>  the same, the time held kept in the video
+#   <t> hold <x> <y> <rrggbb>  the same, the time held kept in the video; !rrggbb in either
+#                              waits for the pixel to have any colour but that one, ~rrggbb
+#                              for one within 12 of it in each channel
+#   <t> still <seconds>        the steps after it held, as by wait and cut out the same way,
+#                              until the screen has not changed for that long: for what
+#                              settles bit by bit, such as icons loading
+#   <t> speed <factor>         the video from here played that many times faster by cut, up
+#                              to the next speed step (speed 1) or the end: for a stretch
+#                              the machine cannot be driven faster through, such as typing
+#                              into a window that falls behind keys sent quicker
+#   <t> link <up|down>         the machine's network cable plugged in or pulled out, a
+#                              machine's started as installer.sh starts it, its netdev net0
 #   <t> find <text>            the first button after the label reading <text> in GNOME
 #                              Shell's own interface, looked up as the scene plays; '@' in
 #                              place of <x> <y> in the steps after it is that button's middle
@@ -481,6 +492,9 @@ for line in open(scene):
         pointer = p
     elif op == "pace": pace = float(a[0])
     elif op in ("wait", "hold"): events.append((t, (op, int(a[0]), int(a[1]), a[2].lower())))
+    elif op == "still": events.append((t, ("still", float(a[0]))))
+    elif op == "speed": events.append((t, ("speed", float(a[0]))))
+    elif op == "link": events.append((t, lambda up=a[0] == "up": call("set_link", {"name": "net0", "up": up})))
     elif op == "end": end = t
     else: sys.exit(f"unknown step: {line.strip()}")
 events.sort(key=lambda e: e[0])
@@ -494,12 +508,19 @@ start = time.time(); n = 0
 # a wait or hold step holds the steps after it, filming on, until the pixel it names has its
 # colour, then moves them, and the end, on by as long as it held them; where in the take each
 # wait began and ended is written next to it, for cut
-waiting, cuts = None, []
+waiting, cuts, last, speeding = None, [], None, None
 def fire():
-    global waiting
+    global waiting, settled, speeding
     e = events.pop(0)[1]
-    if isinstance(e, tuple): waiting = (e, time.time() - start, n / (rate * factor))
+    if isinstance(e, tuple) and e[0] == "speed":
+        if speeding: cuts.append(speeding + (n / (rate * factor),))
+        speeding = (n / (rate * factor), e[1]) if e[1] != 1 else None
+    elif isinstance(e, tuple): waiting = (e, time.time() - start, n / (rate * factor)); settled = time.time()
     else: e()
+def matches(pixel, colour):
+    if colour[0] == "~":
+        return all(abs(a - b) <= 12 for a, b in zip(pixel, bytes.fromhex(colour[1:])))
+    return (pixel.hex() == colour.lstrip("!")) != colour.startswith("!")
 while True:
     now = time.time() - start
     while events and not waiting and events[0][0] <= now:
@@ -511,12 +532,19 @@ while True:
     data = data[-W * H * 3:] if data.split(None, 3)[1:3] == [b"%d" % W, b"%d" % H] else bytes(W * H * 3)
     enc.stdin.write(data)
     if waiting:
-        (kind, x, y, colour), since, began = waiting
+        step, since, began = waiting
         held = time.time() - start - since
-        if data[(y * W + x) * 3:(y * W + x) * 3 + 3].hex() == colour:
+        if step[0] == "still":
+            if data != last: settled = time.time()
+            done = time.time() - settled >= step[1]
+        else:
+            x, y, colour = step[1:]
+            done = matches(data[(y * W + x) * 3:(y * W + x) * 3 + 3], colour)
+        if done:
             events = [(t + held, e) for t, e in events]; end += held; waiting = None
-            if kind == "wait": cuts.append((began, n / (rate * factor)))
-        elif held > 720: sys.exit(f"film: {x},{y} not {colour} after 12 minutes")
+            if step[0] != "hold": cuts.append((began, n / (rate * factor)))
+        elif held > 720: sys.exit(f"film: {' '.join(map(str, step))} not seen after 12 minutes")
+    last = data
     n += 1
     nxt = start + n / rate
     while events and not waiting and start + events[0][0] < nxt:
@@ -524,19 +552,24 @@ while True:
         fire()
     time.sleep(max(0, nxt - time.time()))
 enc.stdin.close(); enc.wait(); os.remove(frame)
-if cuts: open(out + ".cut", "w").write("".join("%.3f %.3f\n" % c for c in cuts))
+# a cut as its beginning and end in the take, a stretch sped up as its beginning, end and factor
+if speeding: cuts.append(speeding + (n / (rate * factor),))
+cuts = sorted((c[0], c[2], c[1]) if len(c) == 3 else c for c in cuts)
+if cuts: open(out + ".cut", "w").write("".join(" ".join("%.3f" % v for v in c) + "\n" for c in cuts))
 print(f"{out}: {n} frames, {n / (rate * factor):.1f} s")
 PY
 }
 
 # A walk-through whose scene waits for what takes as long as it takes (wait steps): the take
-# with every wait cut out, where film wrote them next to the take, then clipped. Such a video
-# does not loop; the site plays it with controls.
+# with every wait cut out, and every stretch its speed steps name sped up, where film wrote
+# them next to the take, then clipped. Such a video does not loop; the site plays it with
+# controls.
 cmd_cut() {
-    local scene="$1" take="$2" out="$3" crop="${4:-}" cut="${2%.*}-cut.mkv" began ended from=0 parts= n=0
+    local scene="$1" take="$2" out="$3" crop="${4:-}" cut="${2%.*}-cut.mkv" began ended speed from=0 parts= n=0
     [[ -f "$take.cut" ]] || die "$take has no wait of $scene recorded next to it ($take.cut)"
-    while read -r began ended; do
+    while read -r began ended speed; do
         parts+="[0:v]trim=$from:$began,setpts=PTS-STARTPTS[p$n];"; n=$((n + 1)); from=$ended
+        [[ -n "$speed" ]] && { parts+="[0:v]trim=$began:$ended,setpts=(PTS-STARTPTS)/$speed[p$n];"; n=$((n + 1)); }
     done <"$take.cut"
     parts+="[0:v]trim=start=$from,setpts=PTS-STARTPTS[p$n];"; n=$((n + 1))
     ffmpeg -hide_banner -loglevel error -y -i "$take" -filter_complex \

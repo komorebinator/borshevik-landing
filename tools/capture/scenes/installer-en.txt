@@ -1,43 +1,94 @@
-# The installer from its first screen to the start of the installation, in English: the
-# language already chosen, the disk with encryption, the user, Begin Installation, the
-# installation's first seconds, and its end, the reboot button pressed - thirty seconds in
-# all. Each step follows as soon as the screen it needs is up and answering: the hub takes
-# up to three and a half seconds to come up after the first screen, the disk screen over a
-# second more before it takes a click, the other screens under one.
+# The installation from the installer's first screen to the desktop, in English: the
+# language already chosen, the disk with encryption, Begin Installation, the installation's
+# first seconds and its end, the reboot button pressed; then the first start: the disk's
+# passphrase, GNOME Initial Setup - privacy, the time zone, the user and the password - and
+# the desktop with the App Manager. Each step follows as soon as the screen it needs is up and
+# answering: the hub takes up to three and a half seconds to come up after the first screen,
+# the disk screen over a second more before it takes a click, the other screens under one.
+# The machine is off the network until the time zone is chosen: on it, Initial Setup would
+# find the filming machine's location and show it on the map; the App Manager, at the end,
+# needs it to list the applications.
+0 link down
 0 move 1100 700
 0.1 glide 1385 870 0.4
 0.6 click 1385 870
-4.0 glide 849 378 0.5
-4.6 click 849 378
-6.4 glide 30 548 0.5
-7.0 click 30 548
-7.3 glide 50 49 0.5
-7.9 click 50 49
+# the pointer on its way to the hub's one item while the hub comes up, which takes up to
+# three and a half seconds, and to the encryption box while the disk screen gets ready to
+# take a click, over a second after it opens: never standing still while waiting; played half
+# as fast again, as is the passphrase, which typed faster loses keys (the author, 2026-10-29)
+0.9 glide 840 455 2.2
+2 speed 1.5
+3.1 hold 728 455 2e3436
+3.4 click 840 455
+3.7 glide 30 548 1.6
+5.6 click 30 548
+5.9 glide 50 49 0.5
+6.5 click 50 49
 # typed key by key, and given a moment after: the installer weighs a password's strength at
 # every key, and keys typed faster than that, or a click right after them, overtake it
-9.1 pace 0.1
-9.1 type cloudberry-tundra
-11.3 glide 757 375 0.3
-11.7 click 757 375
-11.9 type cloudberry-tundra
-14.1 glide 941 489 0.4
-14.6 click 941 489
-15.5 glide 1052 448 0.4
-16.0 click 1052 448
-16.6 type Lily
-17.3 glide 790 251 0.3
-17.7 click 790 251
-17.9 type northern-swamp-42
-20.1 glide 790 318 0.3
-20.5 click 790 318
-20.7 type northern-swamp-42
-22.9 glide 39 43 0.6
-23.6 click 39 43
-24.3 glide 1360 848 0.6
-25.0 click 1360 848
-# the installation, as long as it takes, until the reboot button turns blue; the video
-# keeps its first seconds and what comes after this wait (installer.sh)
-28.0 wait 1425 862 3181e4
-28.9 glide 1368 871 0.6
-29.6 click 1368 871
-30.0 end
+7.5 pace 0.1
+7.5 type cloudberry-42
+9.3 glide 757 375 0.3
+9.7 click 757 375
+9.9 type cloudberry-42
+11.7 glide 941 489 0.4
+12.2 click 941 489
+13.0 glide 1360 848 0.6
+13.7 click 1360 848
+14 speed 1
+# the installation, as long as it takes, until the reboot button turns blue
+16.7 wait 1425 862 3181e4
+17.6 glide 1368 871 0.6
+18.3 click 1368 871
+# the first start: the restart, until the passphrase's prompt
+18.5 wait 551 346 1b6acb
+19.3 type cloudberry-42
+20.9 key ret
+# the boot, until Initial Setup's welcome and its button
+21.5 wait 660 762 d56199
+22.3 glide 720 762 0.5
+22.9 click 720 762
+23.8 glide 1192 105 0.5
+24.4 click 1192 105
+25.3 glide 719 376 0.5
+25.9 click 719 376
+26.1 pace 0.08
+26.1 type New York
+27.0 glide 535 413 0.4
+27.5 click 535 413
+27.7 link up
+# Next, as each page has it, held until it is no longer greyed out: it answers only once
+# the page has checked what was typed, which a machine busy being filmed is slow at
+27.9 hold 1170 96 !eab0cb
+28.0 glide 1192 105 0.4
+28.5 click 1192 105
+29.4 type Lily
+30.0 hold 1170 96 !eab0cb
+30.3 click 1192 105
+31.2 type swamp-larch-42
+# its strength bar full and green only once every key has landed: a click on the
+# confirmation sooner overtakes the last of them
+32.4 hold 1000 441 2ec27e
+32.5 glide 680 543 0.3
+32.9 click 680 543
+33.1 type swamp-larch-42
+34.4 hold 1170 96 !eab0cb
+34.5 glide 1192 105 0.4
+35.0 click 1192 105
+35.9 glide 719 622 0.5
+36.5 click 719 622
+# the session starting, until the tour's balloon, and the App Manager behind it until its list
+# and its icons have loaded and the screen stops changing; the tour skipped and the App
+# Manager's window picked in the overview
+37.1 wait 720 330 e45f67
+37.2 still 2
+38.0 glide 618 657 0.5
+38.6 click 618 657
+39.5 glide 720 430 0.6
+40.2 click 720 430
+40.5 glide 1330 720 0.5
+# the App Manager, in case it has not finished all the same, then a moment of it at rest,
+# of which installer.sh keeps what fits in forty seconds (the author, 2026-10-29)
+41.0 wait 690 859 ~d66299
+41.0 still 1
+41.8 end

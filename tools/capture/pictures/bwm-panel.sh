@@ -35,4 +35,4 @@ c key meta_l-right; sleep 2
 chrome; sleep 9
 c key meta_l-1; sleep 1.5
 c move 720 450
-film bwm-panel bwm-panel 0.1 12.4
+film bwm-panel bwm-panel 0.1 18.2

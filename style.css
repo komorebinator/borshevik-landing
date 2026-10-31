@@ -47,13 +47,15 @@ a {
 }
 
 .link,
-.prose a {
+.prose a,
+.tagline a {
     color: var(--accent);
     text-decoration: none;
 }
 
 .link:hover,
-.prose a:hover {
+.prose a:hover,
+.tagline a:hover {
     text-decoration: underline;
 }
 
@@ -566,8 +568,9 @@ a {
     margin-bottom: 6px;
 }
 
-.prose strong {
-    color: var(--text);
+.prose strong,
+.tagline strong {
+    color: var(--body);
 }
 
 .prose blockquote {
@@ -765,9 +768,12 @@ a {
     box-sizing: border-box;
 }
 
-.feature + .feature,
-.news-item + .news-item {
+.feature + .feature {
     margin-top: 24px;
+}
+
+.news-item + .news-item {
+    margin-top: 16px;
 }
 
 @media (max-width: 800px) {

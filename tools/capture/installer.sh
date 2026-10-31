@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# makes: installer mok
+# makes: installer mok grub
 # The installer's video, and the NVIDIA key's enrollment on the first start, from the ISO as
 # borshevik.org serves it, booted in a machine of its own: no SSH there, only its screen,
 # keyboard and pointer, through capture.sh with CAPTURE_VM. See @LandingPage#capture#installer
@@ -11,6 +11,8 @@
 #                                          installs the NVIDIA image with Secure Boot on, films
 #                                          scenes/mok.txt at its first start to media/<lang>/mok.mp4
 #                                          and powers the machine off
+#        installer.sh grub <iso>          takes GRUB's menu to media/<lang>/grub.webp, both
+#                                          languages, and powers the machine off
 #        installer.sh boot <iso> <en|ru> [secure]
 #                                          only starts it, up to the installer's first screen,
 #                                          to work a scene out in
@@ -45,11 +47,13 @@ PY
 # language, it picks the time zone that goes with it, as it would have for someone there.
 # The display is a standard VGA: with virtio-vga the pointer is drawn on a plane of its own
 # that screendump leaves out, and asked for 1440x900 the ISO hung switching to its root.
-cmd_boot() { # iso lang [secure]
+# The network is net0, which a scene's link step unplugs and plugs back in. Given grub for a
+# language, it stops at GRUB's menu.
+cmd_boot() { # iso lang|grub [secure]
     iso="$(realpath "$1")"
     [[ -f "$iso" ]] || die "no ISO at $1"
     local locale
-    case "$2" in en) locale=en_US.UTF-8 ;; ru) locale=ru_RU.UTF-8 ;; *) die "no language $2" ;; esac
+    case "$2" in en) locale=en_US.UTF-8 ;; ru) locale=ru_RU.UTF-8 ;; grub) locale= ;; *) die "no language $2" ;; esac
     mkdir -p "$vm"
     rm -f "$vm/disk.qcow2" "$vm/vars.fd" "$vm/qmp.sock"
     boxes qemu-img create -q -f qcow2 "$vm/disk.qcow2" 40G
@@ -78,13 +82,14 @@ cmd_boot() { # iso lang [secure]
         -device VGA,xres=1440,yres=900 -display none \
         -qmp "unix:$vm/qmp.sock,server=on,wait=off" \
         -device qemu-xhci -device usb-tablet \
-        -nic user,model=virtio-net-pci \
+        -netdev user,id=net0 -device virtio-net-pci,netdev=net0 \
         >"$vm/qemu.log" 2>&1 &
     local i
     for (( i = 0; i < 100; i++ )); do [[ -S "$vm/qmp.sock" ]] && break; sleep 0.1; done
     [[ -S "$vm/qmp.sock" ]] || die "the machine did not start: $(cat "$vm/qemu.log")"
     # GRUB's entry edited: its kernel line is the third
     sleep 8
+    [[ -n "$locale" ]] || return 0
     c key up; c key e; sleep 1
     c key down; c key down; c key end
     c type " inst.geoloc=0 inst.lang=$locale"; sleep 1
@@ -125,14 +130,16 @@ cmd_stop() {
 }
 
 # Filmed in real time, as it plays (@LandingPage#capture#film), from the installer's first
-# screen to its reboot button pressed, and cut (@LandingPage#capture#cut): the installation's
-# middle goes, the take kept up to the scene's wait - its first seconds, to show it has
-# started - and from where the wait ended (the author, 2026-10-25).
+# screen through the first start's GNOME Initial Setup to the desktop, and cut
+# (@LandingPage#capture#cut): what only takes time - the installation's middle, the restart,
+# the boot after the passphrase, the session starting - goes.
 cmd_take() { # iso lang
     cmd_boot "$1" "$2"
     trap cmd_stop EXIT
     c film "$here/scenes/installer-$2.txt" "$work/$2-installer.mkv"
     c cut "$here/scenes/installer-$2.txt" "$work/$2-installer.mkv" "$root/media/$2/installer.mp4"
+    # forty seconds in all (the author, 2026-10-29): the desktop at rest past them goes
+    c clip "$work/$2-installer-cut.mkv" 0 40 "$root/media/$2/installer.mp4"
 }
 
 # The NVIDIA image's first start with Secure Boot on: the ISO installed by the installer's
@@ -145,19 +152,33 @@ cmd_take() { # iso lang
 cmd_mok() { # iso lang
     cmd_boot "$1" "$2" secure
     trap cmd_stop EXIT
-    c film "$here/scenes/installer-$2.txt" "$work/$2-mok-install.mkv"
-    rm -f "$work/$2-mok-install.mkv"
+    # the installer's scene up to its first start, which is the MOK's here
+    awk '/^# the first start/ { print last + 1, "end"; exit } $1 ~ /^[0-9.]+$/ { last = $1 } { print }' \
+        "$here/scenes/installer-$2.txt" >"$work/$2-mok-install.txt"
+    c film "$work/$2-mok-install.txt" "$work/$2-mok-install.mkv"
+    rm -f "$work/$2-mok-install.mkv" "$work/$2-mok-install.txt"
     until_seen 300 pixel_is 551 346 1b6acb
-    c type cloudberry-tundra; c key ret
+    c type cloudberry-42; c key ret
     until_seen 300 text_in 700x90+370+650
     c film "$here/scenes/mok.txt" "$work/$2-mok.mkv"
     c cut "$here/scenes/mok.txt" "$work/$2-mok.mkv" "$root/media/$2/mok.mp4"
 }
 
+# GRUB's menu as the ISO opens it, its default highlighted, cropped to the menu, its title and
+# its help; in English in both languages, as GRUB has no other.
+cmd_grub() { # iso
+    cmd_boot "$1" grub
+    trap cmd_stop EXIT
+    c shot "$work/grub.png" >/dev/null
+    magick "$work/grub.png" -crop 680x450+380+215 +repage -define webp:lossless=true "$root/media/en/grub.webp"
+    cp "$root/media/en/grub.webp" "$root/media/ru/grub.webp"
+}
+
 case "${1:-}" in
     mok) [[ $# -eq 3 ]] || die "usage: installer.sh mok <nvidia-iso> <en|ru>"; cmd_mok "$2" "$3" ;;
     take) [[ $# -eq 3 ]] || die "usage: installer.sh take <iso> <en|ru>"; cmd_take "$2" "$3" ;;
+    grub) [[ $# -eq 2 ]] || die "usage: installer.sh grub <iso>"; cmd_grub "$2" ;;
     boot) [[ $# -ge 3 ]] || die "usage: installer.sh boot <iso> <en|ru> [secure]"; cmd_boot "$2" "$3" "${4:-}" ;;
     stop) cmd_stop ;;
-    *) die "usage: installer.sh take <iso> <en|ru> | mok <nvidia-iso> <en|ru> | boot <iso> <en|ru> [secure] | stop" ;;
+    *) die "usage: installer.sh take <iso> <en|ru> | mok <nvidia-iso> <en|ru> | grub <iso> | boot <iso> <en|ru> [secure] | stop" ;;
 esac
