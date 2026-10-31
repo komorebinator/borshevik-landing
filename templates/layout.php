@@ -30,7 +30,7 @@
     <header class="site-header">
         <div class="site-header-inner">
             <a class="brand" href="<?= e($link('/')) ?>">
-                <span class="logo-glow"><img src="/borshevik_logo.svg" alt="" width="32" height="32"></span>
+                <img src="/borshevik_logo.svg" alt="" width="32" height="32">
                 <span>Borshevik</span>
             </a>
             <nav class="menu" aria-label="<?= e($t['menu_label']) ?>">

@@ -925,60 +925,6 @@ a {
     padding-bottom: 72px;
 }
 
-/* ── The logo glows softly in a slowly turning gradient of its own colours ── */
-
-.logo-glow,
-.logo-circle {
-    position: relative;
-    isolation: isolate;
-}
-
-.logo-glow {
-    display: block;
-}
-
-.logo-glow::before,
-.logo-circle::before {
-    content: "";
-    position: absolute;
-    inset: -8%;
-    z-index: -1;
-    border-radius: 50%;
-    background: conic-gradient(from 0deg,
-            var(--border-grad-1),
-            var(--border-grad-2),
-            var(--border-grad-3),
-            var(--border-grad-4),
-            var(--border-grad-1));
-    filter: blur(14px);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    animation: glow-turn 12s linear infinite;
-}
-
-.logo-glow::before {
-    inset: -18%;
-    filter: blur(8px);
-}
-
-.brand:hover .logo-glow::before,
-.logo-circle:hover::before {
-    opacity: 0.4;
-}
-
-@keyframes glow-turn {
-    to {
-        transform: rotate(1turn);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .logo-glow::before,
-    .logo-circle::before {
-        animation: none;
-    }
-}
-
 /* ── News thumbnails ────────────────────────────────────── */
 
 .news-item-with-image {
@@ -1040,8 +986,6 @@ a {
     height: 70vmax;
     border-radius: 50%;
     opacity: 0.45;
-    will-change: transform;
-    animation: backdrop-drift 50s ease-in-out infinite alternate;
 }
 
 .backdrop-glow-1 {
@@ -1054,25 +998,16 @@ a {
     right: -25vmax;
     top: 10vh;
     background: radial-gradient(closest-side, var(--border-grad-2), transparent);
-    animation-duration: 64s;
-    animation-delay: -20s;
 }
 
 .backdrop-glow-3 {
     left: 20vw;
     bottom: -35vmax;
     background: radial-gradient(closest-side, var(--border-grad-3), transparent);
-    animation-duration: 58s;
-    animation-delay: -40s;
 }
 
-@keyframes backdrop-drift {
-    to {
-        transform: translate(12vw, 8vh) scale(1.15);
-    }
-}
-
-/* a gear: its outline turns; a seed in the air also rises and sinks a little */
+/* Nothing here moves: an endless animation under the blurred cards kept the browser redrawing
+   the page every frame, a whole CPU core while it stood open (@LandingPage#layout#backdrop). */
 .backdrop-gear {
     position: absolute;
     translate: -50% -50%;
@@ -1083,8 +1018,6 @@ a {
     width: 100%;
     height: 100%;
     overflow: visible;
-    will-change: transform;
-    animation: backdrop-turn 120s linear infinite;
 }
 
 .backdrop-gear path {
@@ -1096,23 +1029,6 @@ a {
 .backdrop-layer {
     position: absolute;
     inset: 0;
-}
-
-.backdrop-layer .backdrop-gear {
-    will-change: transform;
-    animation: backdrop-float 15s ease-in-out infinite alternate;
-}
-
-@keyframes backdrop-float {
-    to {
-        transform: translateY(var(--rise));
-    }
-}
-
-@keyframes backdrop-turn {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 /* a bouquet: a stem from a root below the bottom edge up to a node, and rays from it to its
@@ -1190,22 +1106,9 @@ a {
     }
 }
 
-@keyframes backdrop-turn {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 /* the page above it */
 .site-main {
     position: relative;
     z-index: 1;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .backdrop-gear,
-    .backdrop-gear svg,
-    .backdrop-glow {
-        animation: none;
-    }
-}
