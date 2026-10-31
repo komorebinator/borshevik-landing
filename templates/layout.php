@@ -22,7 +22,7 @@
     <meta property="og:locale" content="<?= $lang === 'ru' ? 'ru_RU' : 'en_US' ?>">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/svg+xml" href="/borshevik_logo.svg">
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/style.css?v=<?= substr(md5_file(__DIR__ . '/../style.css'), 0, 8) ?>">
 </head>
 
 <body>
