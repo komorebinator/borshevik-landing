@@ -1,0 +1,2 @@
+# Pictures the test machine cannot stage, taken by hand, in both languages, with nothing
+# personal in the panel. See @LandingPage#capture#by-hand in spec/.

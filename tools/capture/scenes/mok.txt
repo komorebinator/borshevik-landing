@@ -1,0 +1,22 @@
+# The NVIDIA key enrolled, both languages: from the boot screen's message, its countdown
+# running, R for a restart now; shim's MokManager, the blue screen, opening on its menu:
+# Enroll MOK, Continue, Yes, the password borshevik and Reboot, and the restart up to
+# Borshevik's boot screen. What the restarts spend in between is cut out (capture.sh cut): the
+# waits hold until the blue screen's blue shows and until the passphrase's prompt does.
+3.5 key r
+4.0 wait 720 200 000098
+5.0 key down
+5.6 key ret
+6.8 key down
+7.4 key ret
+8.6 key down
+9.2 key ret
+10.2 pace 0.15
+10.2 type borshevik
+12.0 key ret
+13.4 key ret
+# the restart shown going, not whole: held until the firmware's logo shows, then cut to
+# Borshevik's boot screen, its logo and the disk's passphrase prompt, past GRUB's menu
+13.6 hold 640 430 ffffff
+14.0 wait 551 346 1b6acb
+15.2 end

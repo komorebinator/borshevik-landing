@@ -1,0 +1,25 @@
+# pictures/bwm-rules.sh: the editor and Calculator floating apart, the editor focused. The
+# video ends as it starts.
+0.0 move 720 820
+# the editor carried over Calculator by its title bar, held left of its title, where no
+# tooltip shows its path: it covers Calculator
+0.5 glide 300 222 0.4
+1.0 drag 300 222 690 262 0.45 620 330 0.35 730 290 0.35
+# the Window Rules, on their Windows tab: a new rule for Calculator, Always on top, saved.
+# The tab lists the windows in no fixed order, so Calculator's button is found as it plays.
+3.2 key meta_l-r
+4.1 find org.gnome.Calculator
+4.5 glide @ 0.5
+5.1 click @
+6.1 glide 422 550 0.5
+6.7 click 422 550
+7.6 glide 427 720 0.4
+8.1 click 427 720
+# closed: Calculator is in front at once; the editor carried about again stays beneath it,
+# and is put back where it was
+9.1 glide 1030 208 0.5
+9.7 click 1030 208
+10.8 glide 760 290 0.5
+11.4 drag 760 290 820 240 0.35 700 320 0.35 790 270 0.35 330 222 0.6
+14.2 glide 720 820 0.5
+15.0 end

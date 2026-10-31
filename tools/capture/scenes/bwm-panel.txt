@@ -1,0 +1,38 @@
+# pictures/bwm-panel.sh: Weather, Calendar and Contacts floating on the first workspace, Files
+# and Terminal tiled on the second, Chrome maximized on the third, the first shown. The video
+# ends exactly as it starts, the panel too. The pointer moves at a hand's speed, without
+# lingering between steps.
+0.0 move 720 450
+# each workspace's button clicked in turn
+0.4 glide 175 16 0.3
+0.8 click 175 16
+1.6 glide 237 16 0.2
+1.9 click 237 16
+2.7 glide 95 16 0.3
+3.1 click 95 16
+# the first workspace dragged past Chrome's: it is the third now
+4.0 drag 95 16 205 16 0.35
+# the empty workspace at the end clicked: the overview opens by itself, to start an app there;
+# Secrets started from the dock closes it, and the panel has a new empty workspace at its end
+5.4 glide 282 16 0.3
+5.8 click 282 16
+6.9 glide 595 838 0.4
+7.4 click 595 838
+# Secrets closed by its close button: its workspace goes away, and the view to the one on its
+# left, the first one moved
+9.0 glide 1221 189 0.5
+9.6 click 1221 189
+# that workspace dragged back to the front
+10.4 glide 215 16 0.4
+11.0 drag 215 16 40 16 0.35
+# the empty workspace at the end dragged between the first two: a new one there, shown, and
+# the overview opens by itself, as on the last; Calculator started there from the dock, then
+# closed: the new workspace goes away with it, and the view to the one on its left, the first
+12.2 glide 282 16 0.3
+12.6 drag 282 16 140 16 0.35
+13.7 glide 835 838 0.4
+14.2 click 835 838
+15.8 glide 878 181 0.5
+16.4 click 878 181
+17.2 glide 720 450 0.4
+18.2 end

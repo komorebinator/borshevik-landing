@@ -1,0 +1,73 @@
+# pictures/bwm-tiles.sh: an empty desktop; Files and Terminal open floating, Chrome and the PDF
+# maximized. The overview is opened by Super, as most people open it; an app in the dock is
+# clicked there, one that is not is found by its name; everything else is done with the
+# pointer. The video ends as it starts.
+0.0 move 720 450
+# Files from the dock, the overview opened by Super as most people open it: it floats
+0.5 key meta_l
+1.1 glide 560 838 0.6
+1.9 click 560 838
+# Terminal, not in the dock, found by search: it floats too
+4.0 key meta_l
+4.8 type terminal
+6.1 key ret
+# Chrome from the dock, one place further left now that Terminal, running, has an icon at
+# its end: maximized, it gets a workspace of its own
+7.6 key meta_l
+8.2 glide 360 838 0.5
+8.9 click 360 838
+# Hiddify, found by search, floats over it
+11.5 key meta_l
+12.3 type hiddify
+13.4 key ret
+# Chrome clicked: Hiddify, beneath it now, moves onto the floating workspace on the left
+15.5 glide 1300 600 0.7
+16.3 click 1300 600
+18.0 glide 70 16 0.7
+18.8 click 70 16
+# Terminal tiled left and Files right: Hiddify, covered by both, moves further left
+20.3 glide 170 352 0.5
+20.9 drag 170 352 2 450 0.6
+22.2 glide 780 66 0.5
+22.8 drag 780 66 1437 450 0.6
+# Hiddify's workspace from the panel, and Hiddify closed: the view goes back to the tiles
+24.2 glide 70 16 0.7
+25.0 click 70 16
+26.3 glide 1131 131 0.7
+27.1 click 1131 131
+# the PDF opened from Files: maximized, it gets a workspace of its own
+28.8 glide 803 304 0.7
+29.6 click 803 304
+30.6 glide 1000 150 0.6
+31.3 dclick 1000 150
+# dragged by its title it floats, goes home with the pointer and, dropped at the left edge,
+# takes Terminal's half: Terminal makes room on a workspace of its own on the left, shown
+# from the panel before going back
+33.8 glide 400 50 0.7
+34.6 drag 400 50 2 450 1.4
+37.3 glide 70 16 0.7
+38.1 click 70 16
+39.6 glide 130 16 0.4
+40.1 click 130 16
+# the PDF closed: Terminal comes back to its half; Terminal closed, its half is free
+41.4 glide 696 55 0.7
+42.2 click 696 55
+43.4 glide 697 56 0.3
+43.9 click 697 56
+# Chrome dragged out of its workspace by its tabs takes the free half
+45.4 glide 130 16 0.7
+46.2 click 130 16
+47.7 glide 600 50 0.6
+48.4 drag 600 50 2 450 1.4
+# maximized by its button it gets a workspace of its own; restored, it goes back to its half
+51.0 glide 666 52 0.6
+51.7 click 666 52
+53.4 glide 1386 52 0.7
+54.1 click 1386 52
+# Chrome and Files closed: the empty desktop the video started with
+55.8 glide 704 52 0.7
+56.6 click 704 52
+57.8 glide 1416 54 0.7
+58.6 click 1416 54
+59.6 glide 720 450 0.7
+60.8 end

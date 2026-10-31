@@ -1,14 +1,16 @@
-description: "How work is done on the Borshevik website. The maintainer works straight on `main`, anyone else by pull request into it. `main` is the site: a push that touches the site's files deploys them to borshevik.org by itself, within a minute, with no build, no version and no release in between — so a change is looked at on this machine, served from the working tree, before it is committed, because once it is pushed visitors see it. The ISOs the page offers are not part of this: borshevik's publish-iso workflow uploads them to the server, and deploying never touches them."
+description: "How work is done on the Borshevik website. The maintainer commits and pushes to `experimental`, and a change reaches `main` by pull request from it, as in Borshevik's other repositories; anyone else contributes by pull request into main too. `main` is the site: a push or merge that touches the site's files deploys them to borshevik.org by itself, within a minute, with no build, no version and no release in between. `experimental` deploys nothing, so work is committed and pushed there — kept, and checked by GitHub — before it is ready to go live, and merging its pull request is publishing it (the author, 2026-10-27). A change is still looked at on this machine, served from the working tree, before it is committed. The ISOs the page offers are not part of this: borshevik's publish-iso workflow uploads them to the server, and deploying never touches them."
 extends: "@DuckWorkflow"
 main_branch: main
 src: .github/
 branches:
   - id: main
-    description: "The live site. Every push to it that changes index.php, iso.php, download.php, .htaccess, style.css, borshevik_logo.svg, templates/, share/, tests/check.sh or the deploy workflow runs @BorshevikLandingWorkflow#deploy; a push that changes only the spec, README, AGENTS.md or LICENSE deploys nothing, since none of those are served. The maintainer pushes here directly; outside contributions arrive as pull requests into it."
+    description: "The live site, and GitHub's default branch. Every push to it that changes the site's files — index.php, iso.php, download.php, links.php, .htaccess, style.css, borshevik_logo.svg, lib/, i18n/, templates/, content/, media/, icons/, posts/, share/ — or tests/check.sh or the deploy workflow runs @BorshevikLandingWorkflow#deploy; a push that changes only the spec, README, AGENTS.md or LICENSE deploys nothing, since none of those are served. Nothing is pushed here directly: changes arrive by pull request, the maintainer's from experimental, outside contributions from their own branches."
+  - id: experimental
+    description: Where the maintainer commits and pushes. A push here deploys nothing; @BorshevikLandingWorkflow#check runs @LandingPage#tests#checks on it. Work collects here until it is to go live, then goes to main by pull request; after the merge experimental is main again, and the next work starts from there.
 channels:
   - id: live
     from: main
-    description: "Whoever opens borshevik.org — people deciding whether to install Borshevik, and people who already have and came for an ISO. They get whatever `main` last deployed, with nothing in between to hold a change back, which is why a change is seen locally before it is pushed rather than after."
+    description: Whoever opens borshevik.org — people deciding whether to install Borshevik, and people who already have and came for an ISO. They get whatever `main` last deployed. A change waits on experimental and in its pull request until it is to go live; once merged nothing holds it back, which is why it is seen locally before it is committed.
 steps:
   - id: requested
     description: Someone wants a change to the site, in an issue or in the conversation. It is clarified until nothing is left to guess, then written into the terms.
@@ -26,11 +28,15 @@ steps:
     when: the working tree carries the change, validates, and is not committed, and the author has confirmed it in the locally served page
     operation: "@Git#commit"
   - id: committed
-    description: The change is recorded locally and has reached no one. Pushing it is publishing it, when it touches the site's files.
+    description: The change is recorded locally and has reached no one. It is pushed to experimental, which deploys nothing.
     when: local commits carry the change and are not on the remote
-    operation: "@Git#push(branch=main)"
+    operation: "@Git#push(branch=experimental)"
+  - id: on_experimental
+    description: The change is on experimental, where @BorshevikLandingWorkflow#check ran on it, and not on main. It stays here, with whatever else collects, until the author says it is to go live; then a pull request from experimental into main carries it, its description saying what the site gains. A check that failed is a new change, through the steps from `requested`.
+    when: experimental on the remote carries the change, main does not, and no open pull request into main carries it
+    operation: "@GitHub#open_pull_request(head=experimental, base=main)"
   - id: in_review
-    description: "An outside contribution: a pull request into main carries the change. The maintainer reads it with @GitHub#review_pull_request and serves the pull request's head locally with @LandingPage#recipes#run before merging, since merging is deploying."
+    description: A pull request into main carries the change — the maintainer's from experimental, or an outside contribution — and @BorshevikLandingWorkflow#check has run on it. Merging is deploying. The maintainer's own goes in once the check passes and the author says to publish; an outside one is read with @GitHub#review_pull_request and its head served locally with @LandingPage#recipes#run before merging.
     when: an open pull request into main carries the change
     operation: "@GitHub#merge_pull_request"
   - id: on_main
@@ -41,15 +47,24 @@ steps:
     description: borshevik.org serves the change.
     when: a successful run of deploy.yml deployed a commit of main that contains the change
 components:
+  - id: check
+    type: "@Pipeline"
+    platform: GitHub Actions
+    src: .github/workflows/check.yml
+    triggers:
+      - push to experimental
+      - pull request into main, so the pull request shows whether what merging would deploy passes
+    jobs:
+      - check — @LandingPage#tests#checks on the pushed commit or the pull request's merge, the same checks @BorshevikLandingWorkflow#deploy runs before uploading, so a failure shows on experimental rather than first at the deploy. It needs no secret and touches nothing.
   - id: deploy
     type: "@Pipeline"
     platform: GitHub Actions
     src: .github/workflows/deploy.yml
     triggers:
-      - "push to main, filtered to the paths the site is made of: index.php, iso.php, download.php, .htaccess, style.css, borshevik_logo.svg, templates/**, share/**, plus tests/check.sh and .github/workflows/deploy.yml itself, so a change to how the site is checked or deployed is tried at once"
-      - workflow_dispatch, to deploy main as it stands
+      - push to main, filtered to the paths the site is made of — the files and folders @BorshevikLandingWorkflow#branches#main lists — plus tests/check.sh and .github/workflows/deploy.yml itself, so a change to how the site is checked or deployed is tried at once. A new top-level file or folder the site serves has to be added both to this filter and to the step that collects the served files, or it is neither deployed nor noticed missing
+      - workflow_dispatch, to deploy main as it stands. GitHub lets a run be started on any branch; the job runs only on main, so one started on experimental deploys nothing rather than putting unpublished work on the site
     jobs:
-      - "deploy — one job, in a concurrency group that never cancels a run in progress, so two quick pushes deploy one after the other rather than racing over the same files. It runs @LandingPage#tests#checks first, so a broken page or an applications.json the App Manager would refuse fails the run before anything is uploaded, and the site — and first-login app installation on every new machine — keeps its last working version. It then collects only the files that are served; checks over SSH that both ISOs iso.php offers and their -CHECKSUM files are on the server, so switching the site to ISOs that have not finished uploading leaves the old, working download buttons in place; and rsyncs the collected files to the site root. rsync compares content rather than timestamps, since a fresh checkout gives every file a new mtime, and never deletes (see this component's guidelines). SSH trusts only the recorded host key, and every secret reaches the shell through `env:`, never expanded into the script text."
+      - deploy — one job, in a concurrency group that never cancels a run in progress, so two quick pushes deploy one after the other rather than racing over the same files. It runs @LandingPage#tests#checks first, so a broken page or an applications.json the App Manager would refuse fails the run before anything is uploaded, and the site — and first-login app installation on every new machine — keeps its last working version. It then collects only the files that are served; checks over SSH that both ISOs iso.php offers and their -CHECKSUM files are on the server, so switching the site to ISOs that have not finished uploading leaves the old, working download buttons in place; rsyncs the collected files to the site root, never deleting; and mirrors posts/ on its own, deleting there what the repository no longer has (see this component's guidelines). rsync compares content rather than timestamps, since a fresh checkout gives every file a new mtime. SSH trusts only the recorded host key, and every secret reaches the shell through `env:`, never expanded into the script text.
     outputs:
       - the site's files on the server under DEPLOY_PATH, replaced where they changed; nothing else there is touched
     components:
@@ -84,7 +99,18 @@ components:
         used_by: the SSH setup step
         description: "The server's host key lines as `ssh-keyscan -p <port> <host>` prints them, checked once against the server's real fingerprint when the secret is set. With StrictHostKeyChecking=yes the runner then refuses any other host, instead of trusting whatever answers at deploy time — which is all running ssh-keyscan inside the job would do."
     guidelines:
-      - "Never add --delete, or anything else that removes files on the server. The site root also holds iso/, which is not in the repository and is gigabytes that took an ISO build to produce, and it may hold whatever the host itself keeps there; a deploy that mirrors _site/ exactly would delete all of it. The price is that a file removed from the repository stays on the server until someone removes it there by hand — say so in the commit that removes it."
+      - "Never add --delete, or anything else that removes files on the server, to the upload of the site root. The root also holds iso/, which is not in the repository and is gigabytes that took an ISO build to produce, and it may hold whatever the host itself keeps there; a deploy that mirrors _site/ exactly would delete all of it. The price is that a file removed from the repository stays on the server until someone removes it there by hand — say so in the commit that removes it. posts/ alone is the exception, mirrored by an upload of its own with --delete: it holds nothing but the repository's posts, and the news list is read from its folders, so a post removed or renamed — re-dated to the day what it announces shipped — would otherwise stay listed, twice over (found in review, 2026-10-27)."
+  - id: announce
+    type: "@Pipeline"
+    platform: GitHub Actions
+    src: .github/workflows/announce.yml
+    triggers:
+      - "push to main that adds posts — their folders added by the push, found by git diff --diff-filter=A between the push's before and after over posts/*/ru.md, oldest date first. Its own trigger, apart from @BorshevikLandingWorkflow#deploy: the channel does not wait on the site nor point at it, the post being the same in both (the author, 2026-10-31). A post edited after it went out is not sent again; one already previewed from experimental goes to the channel all the same, as main has not had it"
+      - "push to experimental that adds or changes posts — any file in their folders, by git diff --diff-filter=AM between the push's before and after over posts/: sent to the test target, the maintainer's private chat with the bot, so a post is seen as the channel will show it as soon as it is on experimental, and again after each edit, before it is merged (the author, 2026-10-31); and one that changes the sending — tools/telegram/ or announce.yml — sends every post main does not have yet, or the newest when main has them all, to see how the change looks, several posts in a row included (the author, 2026-10-31). On a push, not by hand, because GitHub runs a workflow by hand only once its file is on main, which before the first merge it is not"
+      - "workflow_dispatch, with the posts' folder names and a target, test or channel: to see a post as the channel will show it, in the maintainer's private chat with the bot, before it goes out; to send posts that predate this pipeline, as the first three did (the author, 2026-10-31); and to send again one that failed. Available once announce.yml is on main; it then runs on any branch, experimental's posts included"
+    jobs:
+      - "announce — for each post, @LandingPage#announce#render reads its ru.md — the channel is Russian-speaking, as @LandingPage#links says — and the post goes out media first (the author, 2026-10-31): its pictures and videos, in the post's order, as one album (sendMediaGroup; a single one by sendPhoto or sendVideo), captioned with as much of its text, in whole blocks, as a caption holds — 1024 characters — so a short post is one message; and what does not fit, as a message in Telegram's HTML, its link previews off, sent as a reply to the album, so it shows which post it belongs to even when several go out together. Telegram puts no picture in the middle of a text. Tried before: two messages side by side, the album first, which left it unclear which pictures went with which post once several went out together; and the text first with the album replying to it, which the author liked less than pictures first (2026-10-31). Pictures go as the post has them, not converted (the author, 2026-10-31); videos as they are, with their width, height and duration from ffprobe, so Telegram shows them at their own shape. Files are uploaded from the checkout. A post that fails stops the run, and the posts after it wait for a run by hand"
+    description: "Sends the news to the Telegram channel @borsheviklinux as they are added, so a post is written once, in posts/, and published by merging it (the author, 2026-10-31). X is not part of it yet. Its secrets: TELEGRAM_BOT_TOKEN, the bot's, an administrator of the channel allowed to post; and TELEGRAM_TEST_CHAT, the maintainer's chat id with the bot, for the test target. Without the token it sends nothing and says so."
 guidelines:
-  - "Switching the site to new installer images is a change like any other here — the two names in @LandingPage#offered-isos, committed and pushed — and happens only after the author has installed both in a virtual machine. The images reach the server earlier, from the borshevik repository's publish-iso workflow, before anyone has tried them: they are tried as this server serves them, which is far faster than from GitHub, and nothing links to them until this switch. publish-iso's job summary gives the two names. Nothing in this repository uploads or deletes images."
+  - "Switching the site to new installer images is a change like any other here — the two names in @LandingPage#offered-isos, committed to experimental and merged into main — and happens only after the author has installed both in a virtual machine. The images reach the server earlier, from the borshevik repository's publish-iso workflow, before anyone has tried them: they are tried as this server serves them, which is far faster than from GitHub, and nothing links to them until this switch. publish-iso's job summary gives the two names. Nothing in this repository uploads or deletes images."
   - "Once a deploy has succeeded, stop the local preview container of @LandingPage#recipes#run (borshevik-landing-preview) if it is still running, without being asked. It was only there to look at the change before it went live; left running it keeps port 8000 and serves a working tree that is no longer what the site runs."

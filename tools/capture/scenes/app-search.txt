@@ -1,0 +1,15 @@
+# pictures/app-search.sh: Files and Chrome side by side, the English layout on. The video
+# ends as it starts.
+0.0 move 1439 899
+# the overview, the Russian layout, and "terminal" typed as "еуктштфд": Terminal is found,
+# and Enter starts it
+0.5 key meta_l
+1.5 key meta_l-spc
+2.0 type terminal
+4.0 key ret
+# the English layout back, and Terminal, floating over the tiles, closed by its button
+5.2 key meta_l-spc
+5.8 glide 1062 220 0.5
+6.5 click 1062 220
+7.5 glide 1439 899 0.5
+8.5 end

@@ -8,10 +8,17 @@ on:
       - index.php
       - iso.php
       - download.php
+      - links.php
       - .htaccess
       - style.css
       - borshevik_logo.svg
+      - lib/**
+      - i18n/**
       - templates/**
+      - content/**
+      - media/**
+      - icons/**
+      - posts/**
       - share/**
       - tests/check.sh
       - .github/workflows/deploy.yml
@@ -26,6 +33,8 @@ concurrency:
 
 jobs:
   deploy:
+    # a manual run can be started on any branch; only main is the site
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,7 +46,8 @@ jobs:
       - name: Collect site files
         run: |
           mkdir _site
-          cp -r index.php iso.php download.php .htaccess style.css borshevik_logo.svg templates share _site/
+          cp -r index.php iso.php download.php links.php .htaccess style.css borshevik_logo.svg \
+            lib i18n templates content media icons posts share _site/
 
       - name: Configure SSH
         env:
@@ -63,7 +73,7 @@ jobs:
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "cd '${DEPLOY_PATH%/}/iso' && ls -l -- '$standard' '$standard-CHECKSUM' '$nvidia' '$nvidia-CHECKSUM'"
 
-      # No --delete: the site root also holds iso/ and whatever the host keeps there.
+      # No --delete on the root: it also holds iso/ and whatever the host keeps there.
       - name: Upload
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -71,6 +81,10 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          rsync -rlvz --checksum --chmod=D755,F644 \
-            -e "ssh -i $HOME/.ssh/deploy_key -p ${DEPLOY_PORT:-22} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes" \
+          ssh="ssh -i $HOME/.ssh/deploy_key -p ${DEPLOY_PORT:-22} -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes"
+          rsync -rlvz --checksum --chmod=D755,F644 -e "$ssh" \
             _site/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH%/}/"
+          # posts/ alone is mirrored: it holds nothing but the repository's posts, and the news
+          # list is read from its folders, so a post removed or renamed here has to go there too
+          rsync -rlvz --checksum --delete --chmod=D755,F644 -e "$ssh" \
+            _site/posts/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH%/}/posts/"

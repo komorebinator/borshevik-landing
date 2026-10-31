@@ -1,0 +1,25 @@
+# Fedora Media Writer, in English: Select .iso file, Next, the ISO picked in Downloads, the
+# stick already chosen, Write, the erase confirmed, the administrator's password; then the
+# writing, as long as it takes, and Finished.
+0 move 1100 760
+0.3 glide 521 604 0.5
+0.9 click 521 604
+1.4 glide 963 674 0.4
+1.9 click 963 674
+2.6 glide 882 389 0.5
+3.2 click 882 389
+4.4 glide 357 578 0.5
+5.0 click 357 578
+5.8 glide 552 310 0.5
+6.4 dclick 552 310
+7.4 glide 965 674 0.5
+8.0 click 965 674
+8.7 glide 843 543 0.4
+9.2 click 843 543
+10.3 type borshevik-test
+12.3 key ret
+# the writing and its check, as long as they take, until Finished shows its button, where
+# nothing stands while it writes - its bar stands higher in Russian than in English; the
+# video keeps its first seconds and what comes after this wait (capture.sh cut)
+16 wait 940 666 2e2e32
+17.5 end

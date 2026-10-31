@@ -1,0 +1,114 @@
+name: Announce
+
+# Sends posts to Telegram: those a push to main adds to the channel, those a push to
+# experimental adds to the maintainer's chat with the bot as a preview, any by hand. Apart from
+# the deploy: the channel neither waits on the site nor points at it. See
+# @BorshevikLandingWorkflow#announce in spec/.
+on:
+  push:
+    branches:
+      - main
+      - experimental
+    paths:
+      - posts/**
+      - tools/telegram/**
+      - .github/workflows/announce.yml
+  workflow_dispatch:
+    inputs:
+      posts:
+        description: Post folders, space-separated, such as 2026-10-27-new-site
+        required: true
+        type: string
+      target:
+        description: test sends to the maintainer's chat with the bot, channel to @borsheviklinux
+        required: true
+        type: choice
+        options:
+          - test
+          - channel
+        default: test
+
+permissions:
+  contents: read
+
+concurrency:
+  group: announce
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          # the push's previous commit, to tell which posts it added
+          fetch-depth: 0
+
+      # by hand, the posts asked for; on a push to main, those it added, to the channel; on a
+      # push to experimental, those it added or changed, to the maintainer's chat
+      - name: Pick the posts
+        id: pick
+        env:
+          BEFORE: ${{ github.event.before }}
+          POSTS: ${{ inputs.posts }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            # main sends a post once, when it arrives; experimental shows it again after each edit
+            POSTS=""
+            if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+              TARGET=channel filter=A paths='posts/*/ru.md'
+            else
+              TARGET=test filter=AM paths='posts/'
+            fi
+            if [[ ! "$BEFORE" =~ ^0*$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+              POSTS="$(git diff --name-only --diff-filter=$filter "$BEFORE" HEAD -- "$paths" | cut -d/ -f2 | sort -u | tr '\n' ' ')"
+              # a change to the sending, on experimental, shows the posts main lacks, else the newest
+              if [[ "$TARGET" == test ]] && ! git diff --quiet "$BEFORE" HEAD -- tools/telegram/ .github/workflows/announce.yml; then
+                git fetch -q origin main
+                unsent="$(git diff --name-only --diff-filter=A origin/main HEAD -- 'posts/*/ru.md' | cut -d/ -f2)"
+                [[ -n "$unsent" ]] || unsent="$(ls posts | sort | tail -1)"
+                POSTS="$(printf '%s\n' $POSTS $unsent | sort -u | tr '\n' ' ')"
+              fi
+            fi
+          fi
+          echo "posts: ${POSTS:-none}, to $TARGET"
+          { echo "posts=$POSTS"; echo "target=$TARGET"; } >>"$GITHUB_OUTPUT"
+
+      - name: Install ffprobe if the runner lacks it
+        if: steps.pick.outputs.posts != ''
+        run: |
+          if ! command -v ffprobe >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends ffmpeg
+          fi
+
+      # posts in date order, which their folder names sort into; one that fails stops the run
+      - name: Send
+        if: steps.pick.outputs.posts != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TEST_CHAT: ${{ secrets.TELEGRAM_TEST_CHAT }}
+          POSTS: ${{ steps.pick.outputs.posts }}
+          TARGET: ${{ steps.pick.outputs.target }}
+        run: |
+          if [[ -z "$TELEGRAM_BOT_TOKEN" ]]; then
+            echo "::warning::TELEGRAM_BOT_TOKEN is not set: nothing sent"
+            exit 0
+          fi
+          case "$TARGET" in
+            channel) chat=@borsheviklinux ;;
+            test)
+              chat="$TELEGRAM_TEST_CHAT"
+              [[ -n "$chat" ]] || { echo "TELEGRAM_TEST_CHAT is not set" >&2; exit 1; }
+              ;;
+            *) echo "no target $TARGET" >&2; exit 1 ;;
+          esac
+          for post in $(printf '%s\n' $POSTS | sort); do
+            if [[ ! "$post" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$ || ! -d "posts/$post" ]]; then
+              echo "no post $post" >&2
+              exit 1
+            fi
+            bash tools/telegram/send.sh "posts/$post" "$chat" ru
+          done
