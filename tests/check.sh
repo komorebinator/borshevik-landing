@@ -21,7 +21,7 @@ trap cleanup EXIT
 php() { command php -d display_errors=1 -d error_reporting=-1 "$@"; }
 
 # 1. the PHP parses
-for f in index.php download.php iso.php links.php lib/*.php i18n/*.php templates/*.php; do
+for f in index.php download.php iso.php links.php lib/*.php i18n/*.php templates/*.php tools/telegram/*.php; do
     if out="$(php -l "$f" 2>&1)"; then
         ok "php-syntax $f"
     else
@@ -157,6 +157,15 @@ while IFS= read -r line; do
         *) echo "$line"; failed=1 ;;
     esac
 done < <(php "$tmp/content.php" 2>&1)
+
+# 6b. every post goes out to Telegram within its limits, as announce.yml will send it
+problems=""
+for dir in posts/*/; do
+    for lang in en ru; do
+        out="$(php tools/telegram/render.php "$dir" "$lang" 2>&1 >/dev/null)" || problems+="${out:-$dir$lang.md does not render}; "
+    done
+done
+if [ -z "$problems" ]; then ok telegram; else fail telegram "$problems"; fi
 
 # 7. the Markdown renderer makes exactly this of the syntax pages and posts rely on
 cat > "$tmp/markdown.php" <<'PHP'
