@@ -2,12 +2,12 @@
 // The page's background, after the logo: gears like its own held up on stems, as hogweed
 // holds its umbels — a meadow of such plants along the
 // bottom edge, each different, near and large at the window's sides, far, small and out of
-// focus towards its middle — and small gears drifting in the air above them like seeds. The
-// gears turn slowly and the seeds rise and sink a little; the stems stand still; the logo's
-// colours drift beneath it all as a soft glow the outlines take up. Laid out by a generator
-// with a fixed seed, so the page looks the same at every visit. Each gear is a layer of its
-// own that the browser turns and moves without redrawing the page, and nothing needs a
-// script. See @LandingPage#layout#backdrop.
+// focus towards its middle — and small gears in the air above them like seeds; the logo's
+// colours lie beneath it all as a soft glow the outlines take up. Nothing moves: animated, it
+// kept the browser redrawing the page every frame. Laid out by a generator with a fixed seed,
+// so the page looks the same at every visit; the generator still draws each gear's turning
+// and drifting, which nothing uses now, so the layout stays as it was. No script. See
+// @LandingPage#layout#backdrop.
 
 // The outline of a gear in the logo's style, centred on 0,0: near-square teeth a little
 // narrower at the tip, as wide as the gaps between them, around a body with a wide hole.
@@ -28,13 +28,12 @@ $gear_path = function (float $r, int $teeth): string {
 // broad teeth whatever the size, as the logo's: 8 to 14
 $teeth_for = fn(float $r) => max(8, min(14, (int) round(6 + $r / 9)));
 
-// One turning gear centred on left, top (CSS lengths), wrapped so that it can also drift.
-$gear = function (string $left, string $top, float $r, float $period, int $dir, string $drift = '') use ($gear_path, $teeth_for): string {
+// One gear centred on left, top (CSS lengths), with any further style of its own.
+$gear = function (string $left, string $top, float $r, string $style = '') use ($gear_path, $teeth_for): string {
     $size = ceil($r * 2 + 4);
     return sprintf('<div class="backdrop-gear" style="left: %s; top: %s; width: %dpx; height: %dpx%s">'
-        . '<svg viewBox="%s %s %d %d" focusable="false" style="animation-duration: %ss%s"><path d="%s" fill-rule="evenodd" /></svg></div>',
-        $left, $top, $size, $size, $drift, -$size / 2, -$size / 2, $size, $size,
-        $period, $dir < 0 ? '; animation-direction: reverse' : '', $gear_path($r, $teeth_for($r)));
+        . '<svg viewBox="%s %s %d %d" focusable="false"><path d="%s" fill-rule="evenodd" /></svg></div>',
+        $left, $top, $size, $size, $style, -$size / 2, -$size / 2, $size, $size, $gear_path($r, $teeth_for($r)));
 };
 // the logo's colours
 $tints = ['#8dd3c7', '#80b1d3', '#bebada', '#bc80bd', '#e2b8ce'];
@@ -156,9 +155,8 @@ array_splice($bouquets, 2, 3, $middle);
     <div class="backdrop-glow backdrop-glow-3"></div>
     <?php foreach ($seeds as $layer => $list): ?>
         <div class="backdrop-layer backdrop-<?= $layer ?>">
-            <?php foreach ($list as [$x, $y, $r, $period, $dir, $rise, $float, $delay]): ?>
-                <?= $gear("$x%", "$y%", $r, $period, $dir,
-                    sprintf('; --rise: %dpx; animation-duration: %ss; animation-delay: -%ss', $rise, $float, $delay)) ?>
+            <?php foreach ($list as [$x, $y, $r]): ?>
+                <?= $gear("$x%", "$y%", $r) ?>
             <?php endforeach; ?>
         </div>
     <?php endforeach; ?>
@@ -189,16 +187,16 @@ array_splice($bouquets, 2, 3, $middle);
         ?>
         <div class="backdrop-bouquet backdrop-<?= $depth ?>" style="left: <?= round($left, 1) ?>%; bottom: <?= -round($below) ?>px">
             <svg class="backdrop-stems" viewBox="-600 -1000 1200 1100" focusable="false"><?php foreach ($stems as [$d, $width]): ?><path d="<?= $d ?>" style="stroke-width: <?= $width ?>" /><?php endforeach; ?></svg>
-            <?php foreach (array_merge($heads, $extra) as $i => [$x, $y, $r, , $period, $dir]):
+            <?php foreach (array_merge($heads, $extra) as $i => [$x, $y, $r]):
                 if (isset($tinted[$i])) continue; ?>
-                <?= $gear(round($x) . 'px', round($y) . 'px', $r, $period, $dir) ?>
+                <?= $gear(round($x) . 'px', round($y) . 'px', $r) ?>
             <?php endforeach; ?>
         </div>
         <?php if ($tinted): ?>
             <div class="backdrop-bouquet backdrop-tint backdrop-<?= $depth ?>" style="left: <?= round($left, 1) ?>%; bottom: <?= -round($below) ?>px">
                 <?php foreach ($tinted as $i => $colour):
-                    [$x, $y, $r, , $period, $dir] = array_merge($heads, $extra)[$i]; ?>
-                    <?= $gear(round($x) . 'px', round($y) . 'px', $r, $period, $dir, "; --colour: $colour") ?>
+                    [$x, $y, $r] = array_merge($heads, $extra)[$i]; ?>
+                    <?= $gear(round($x) . 'px', round($y) . 'px', $r, "; --colour: $colour") ?>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
