@@ -22,7 +22,7 @@ Pair the two computers with **GSConnect** and they share one clipboard, so the c
 
 **Borshevik** is built on **Fedora Atomic** with help from the **uBlue** ecosystem and is delivered as a single, read-only system image. An update is a whole new image: it downloads in the background and takes effect at the next restart, and if something goes wrong you simply boot back into the previous version.
 
-Updates, rollback and automatic updates are all in one window, the **Image Manager**. The image is built in the open from [its public repository](https://github.com/komorebinator/borshevik), with no telemetry beyond **Fedora**'s and no online accounts required.
+Updates, rollback and automatic updates are all in one window, the **Image Manager**. The image is built in the open from [its public repository](https://github.com/komorebinator/borshevik).
 
 ## Android apps
 
@@ -70,7 +70,7 @@ Tiling and ordinary floating windows, side by side, laid out over workspaces by 
 
 ::exclusive
 
-Some windows need a place of their own. Press **Super+R**, pick an open window and give it a rule: show it on every workspace, keep it above the others, open it at a given size and place, or on a workspace of its own. A rule is picked by the window's class or title, and takes effect as soon as it is saved. **Borshevik** comes with a few — **Steam** opens on its own workspace, and a picture-in-picture video stays on top in the corner of every workspace.
+Some windows need a place of their own. Press **Super+R**, pick an open window and give it a rule: show it on every workspace, keep it above the others, open it at a given size and place, and so on. A rule is picked by the window's class or title, and takes effect as soon as it is saved. **Borshevik** comes with a few — **Steam** opens on its own workspace, and a picture-in-picture video stays on top in the corner of every workspace.
 
 ## Translate the selected text
 

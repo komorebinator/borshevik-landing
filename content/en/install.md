@@ -4,13 +4,13 @@ Installing asks very few questions. You need a USB drive of at least 8 GB and th
 
 ## 1. Download the image
 
-Take the **NVIDIA** image if your computer has an NVIDIA graphics card, and the standard one otherwise — for AMD and Intel graphics.
+Take the **NVIDIA** image if your computer has an **NVIDIA** graphics card, and the standard one otherwise — for **AMD** and **Intel** graphics.
 
 ::downloads
 
 ## 2. Write it to a USB drive
 
-Install Fedora Media Writer:
+Install **Fedora Media Writer**:
 
 ::media-writer
 
@@ -20,7 +20,7 @@ Open it, choose **Select .iso file**, pick the image you downloaded and the USB 
 
 ## 3. Boot from the USB drive
 
-Plug the drive into the computer, turn it on and open the boot menu — usually with F12, F11, F8 or Esc right after power-on, depending on the manufacturer — and choose the USB drive. We recommend having **Secure Boot** on in the computer's firmware settings: then only signed software can start before the system, so nothing can quietly slip into the boot.
+Plug the drive into the computer, turn it on and open the boot menu — usually with **F12**, **F11**, **F8** or **Esc** right after power-on, depending on the manufacturer — and choose the USB drive. We recommend having **Secure Boot** on in the computer's firmware settings: then only signed software can start before the system, so nothing can quietly slip into the boot.
 
 In the menu that opens, leave **Test this media & install borshevik 44**: it checks the USB drive for errors, then starts the installer. It is chosen by itself in a minute.
 
@@ -41,13 +41,13 @@ What to know on the way:
 
 ## 5. NVIDIA image with Secure Boot on
 
-Right after the encryption passphrase, before the setup, the boot screen says the NVIDIA driver's key must be confirmed, and in 10 seconds the computer restarts into a blue screen (**R** restarts right away, **S** puts it off until the next start). There, with the arrow keys and Enter — the mouse does not work on it — choose **Enroll MOK**, then **Continue**, **Yes**, type the password **borshevik** and choose **Reboot**. This lets the NVIDIA driver load under Secure Boot, and happens only once.
+Right after the encryption passphrase, before the setup, the boot screen says the **NVIDIA** driver's key must be confirmed, and in 10 seconds the computer restarts into a blue screen (**R** restarts right away, **S** puts it off until the next start). There, with the arrow keys and **Enter** — the mouse does not work on it — choose **Enroll MOK**, then **Continue**, **Yes**, type the password **borshevik** and choose **Reboot**. This lets the **NVIDIA** driver load under **Secure Boot**, and happens only once.
 
 ::video en/mok.mp4 Confirming the NVIDIA driver's key on the blue MOK Manager screen
 
 ## 6. The App Manager
 
-It opens by itself on your first login — GNOME also offers a welcome tour, which you can skip. In the **App Manager**, check the categories of apps you want, turn on Android support if you like, and press **Install**.
+It opens by itself on your first login — **GNOME** also offers a welcome tour, which you can skip. In the **App Manager**, check the categories of apps you want, turn on **Android** support if you like, and press **Install**.
 
 ![The App Manager on the first login](en/app-manager.webp)
 

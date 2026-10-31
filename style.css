@@ -701,7 +701,7 @@ a {
     width: min(1160px + 2 * var(--card-pad), calc(100vw - 40px));
     margin-top: 28px;
     display: grid;
-    grid-template-columns: minmax(0, 72fr) minmax(0, 28fr);
+    grid-template-columns: minmax(0, 66fr) minmax(0, 34fr);
     gap: 40px;
     align-items: start;
 }
