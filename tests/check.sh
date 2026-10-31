@@ -254,7 +254,7 @@ if [ -z "$problems" ]; then ok htaccess; else fail htaccess "$problems"; fi
 
 # 10. every section renders in the expected language, with the download buttons where they belong
 mkdir "$tmp/site"
-cp -r index.php iso.php download.php links.php lib i18n templates content media icons posts "$tmp/site/"
+cp -r index.php iso.php download.php links.php style.css lib i18n templates content media icons posts "$tmp/site/"
 mkdir "$tmp/site/iso"
 checksum="$(printf 'a%.0s' {1..64})"
 if [ -n "$standard" ]; then
