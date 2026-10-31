@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Sends one post to one Telegram chat: its text, then its pictures and videos as an album
-# replying to it, so the album shows which post it belongs to.
+# Sends one post to one Telegram chat: its pictures and videos as an album captioned with as
+# much of its text as a caption holds, then the rest of the text replying to the album.
 # See @LandingPage#announce#send in spec/. Needs php, curl, jq and ffprobe.
 # usage: TELEGRAM_BOT_TOKEN=... send.sh <post folder> <chat id or @channel> [en|ru]
 set -euo pipefail
@@ -30,10 +30,7 @@ call() { # method, curl args...
 php "$here/render.php" "$post" "$lang" >"$work/post.json"
 count="$(jq '.media | length' "$work/post.json")"
 
-text="$(call sendMessage -H 'Content-Type: application/json' -d "$(jq -c --arg chat "$chat" \
-    '{chat_id: $chat, text: .text, parse_mode: "HTML", link_preview_options: {is_disabled: true}}' \
-    "$work/post.json")" | jq .result.message_id)"
-reply="{\"message_id\":$text}"
+caption="$(jq -r .caption "$work/post.json")"
 
 # the files as the post has them; each video with its own shape
 items=() files=() paths=()
@@ -55,16 +52,27 @@ for (( i = 0; i < count; i++ )); do
     fi
 done
 
+# the album, the caption on its first item; first, the message the rest replies to
+first=""
 if (( count == 1 )); then
     type="$(jq -r '.type' <<<"${items[0]}")"
     extra=()
     [[ "$type" == video ]] && extra=(-F "width=$(jq .width <<<"${items[0]}")" \
         -F "height=$(jq .height <<<"${items[0]}")" -F "duration=$(jq .duration <<<"${items[0]}")" \
         -F supports_streaming=true)
-    call "send${type^}" --form-string "chat_id=$chat" --form-string "reply_parameters=$reply" \
-        -F "$type=@${paths[0]}" "${extra[@]}" >/dev/null
+    first="$(call "send${type^}" --form-string "chat_id=$chat" --form-string "caption=$caption" \
+        --form-string parse_mode=HTML -F "$type=@${paths[0]}" "${extra[@]}" | jq .result.message_id)"
 elif (( count > 1 )); then
-    call sendMediaGroup --form-string "chat_id=$chat" --form-string "reply_parameters=$reply" \
-        --form-string "media=$(printf '%s\n' "${items[@]}" | jq -sc .)" "${files[@]}" >/dev/null
+    items[0]="$(jq -c --arg c "$caption" '. + {caption: $c, parse_mode: "HTML"}' <<<"${items[0]}")"
+    first="$(call sendMediaGroup --form-string "chat_id=$chat" \
+        --form-string "media=$(printf '%s\n' "${items[@]}" | jq -sc .)" "${files[@]}" | jq '.result[0].message_id')"
+fi
+
+# what the caption did not hold, replying to the album; a post without media is this alone
+if [[ -n "$(jq -r .rest "$work/post.json")" ]]; then
+    call sendMessage -H 'Content-Type: application/json' -d "$(jq -c --arg chat "$chat" --arg first "$first" \
+        '{chat_id: $chat, text: .rest, parse_mode: "HTML", link_preview_options: {is_disabled: true}}
+         + (if $first == "" then {} else {reply_parameters: {message_id: ($first | tonumber)}} end)' \
+        "$work/post.json")" >/dev/null
 fi
 echo "sent $(basename "$post") to $chat"

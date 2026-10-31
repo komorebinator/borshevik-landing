@@ -1,6 +1,7 @@
 <?php
-// A post as the Telegram channel gets it: its text in Telegram's HTML and its pictures and
-// videos, as JSON. See @LandingPage#announce#render in spec/.
+// A post as the Telegram channel gets it, as JSON: its pictures and videos, the caption the
+// album carries - as much of its text, in Telegram's HTML, as a caption holds - and the rest of
+// the text. See @LandingPage#announce#render in spec/.
 // usage: php render.php <post folder> <en|ru>
 
 require __DIR__ . '/../../lib/site.php';
@@ -8,6 +9,7 @@ require __DIR__ . '/../../lib/markdown.php';
 
 const TELEGRAM_ORIGIN = 'https://borshevik.org'; // for a link to one of the site's pages
 const TELEGRAM_TEXT_MAX = 4096;
+const TELEGRAM_CAPTION_MAX = 1024;
 const TELEGRAM_ALBUM_MAX = 10;
 
 function fail(string $message): never
@@ -45,6 +47,7 @@ if (!is_file($file)) {
 $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", file_get_contents($file)));
 $n = count($lines);
 $blocks = [];
+$headings = []; // the indices of $blocks that are headings
 $media = [];
 
 // a paragraph that leads into a picture ends with a colon, which in the message, the picture
@@ -79,6 +82,7 @@ for ($i = 0; $i < $n;) {
     }
 
     if (preg_match('~^#{1,3}\s+(.*)$~', $line, $m)) {
+        $headings[count($blocks)] = true;
         $blocks[] = '<b>' . telegram_inline(trim($m[1])) . '</b>';
         $i++;
         continue;
@@ -147,13 +151,26 @@ for ($i = 0; $i < $n;) {
     }
 }
 
-$text = implode("\n\n", $blocks);
+// the caption: whole blocks while they fit, and not ending with a heading, which belongs to
+// what follows it; without media, there is nothing to caption
+$cut = 0;
+if ($media) {
+    while ($cut < count($blocks)
+        && telegram_length(implode("\n\n", array_slice($blocks, 0, $cut + 1))) <= TELEGRAM_CAPTION_MAX) {
+        $cut++;
+    }
+    while ($cut > 1 && isset($headings[$cut - 1])) {
+        $cut--;
+    }
+}
+$caption = implode("\n\n", array_slice($blocks, 0, $cut));
+$rest = implode("\n\n", array_slice($blocks, $cut));
 
-if (($length = telegram_length($text)) > TELEGRAM_TEXT_MAX) {
-    fail("$file: $length characters, Telegram takes " . TELEGRAM_TEXT_MAX);
+if (($length = telegram_length($rest)) > TELEGRAM_TEXT_MAX) {
+    fail("$file: $length characters past the caption, a message takes " . TELEGRAM_TEXT_MAX);
 }
 if (count($media) > TELEGRAM_ALBUM_MAX) {
     fail("$file: " . count($media) . ' pictures and videos, an album holds ' . TELEGRAM_ALBUM_MAX);
 }
 
-echo json_encode(['text' => $text, 'media' => $media], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), "\n";
+echo json_encode(['media' => $media, 'caption' => $caption, 'rest' => $rest], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), "\n";
