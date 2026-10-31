@@ -747,7 +747,7 @@ a {
     position: relative;
     left: 50%;
     transform: translateX(-50%);
-    width: min(1160px + 2 * var(--card-pad), calc(100vw - 40px));
+    width: min(1320px + 2 * var(--card-pad), calc(100vw - 40px));
     margin-top: 28px;
     display: grid;
     grid-template-columns: minmax(0, 66fr) minmax(0, 34fr);
