@@ -12,6 +12,7 @@ on:
     paths:
       - posts/**
       - tools/telegram/**
+      - .github/workflows/announce.yml
   workflow_dispatch:
     inputs:
       posts:
@@ -63,10 +64,12 @@ jobs:
             fi
             if [[ ! "$BEFORE" =~ ^0*$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
               POSTS="$(git diff --name-only --diff-filter=$filter "$BEFORE" HEAD -- "$paths" | cut -d/ -f2 | sort -u | tr '\n' ' ')"
-              # a change to the sending, on experimental, shows the newest post again
-              if [[ "$TARGET" == test ]] && ! git diff --quiet "$BEFORE" HEAD -- tools/telegram/; then
-                newest="$(ls posts | sort | tail -1)"
-                [[ " $POSTS " == *" $newest "* ]] || POSTS+="$newest "
+              # a change to the sending, on experimental, shows the posts main lacks, else the newest
+              if [[ "$TARGET" == test ]] && ! git diff --quiet "$BEFORE" HEAD -- tools/telegram/ .github/workflows/announce.yml; then
+                git fetch -q origin main
+                unsent="$(git diff --name-only --diff-filter=A origin/main HEAD -- 'posts/*/ru.md' | cut -d/ -f2)"
+                [[ -n "$unsent" ]] || unsent="$(ls posts | sort | tail -1)"
+                POSTS="$(printf '%s\n' $POSTS $unsent | sort -u | tr '\n' ' ')"
               fi
             fi
           fi
