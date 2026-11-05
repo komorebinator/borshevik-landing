@@ -1,0 +1,11 @@
+# The crash of posts/2026-11-05-menu-crash, as the post tells how to bring it about: Files' view
+# menu opened with a click, a press in the window outside the menu held, Super pressed, and
+# GNOME going down to GDM's greeter. Filmed with Fedora's own mutter, which the post's script
+# puts in place first. The menu opens on the button's release, like a context menu, which is
+# what the crash needs: a press outside it that closes it while the button is still down.
+0.0 move 990 175
+0.2 click 1008 153
+0.9 glide 650 550 0.4
+1.4 drag 650 550 650 550 1.2
+1.9 key meta_l
+5.0 end
