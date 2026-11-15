@@ -1,4 +1,6 @@
 description: "How work is done on the Borshevik website. The maintainer commits and pushes to `experimental`, and a change reaches `main` by pull request from it, as in Borshevik's other repositories; anyone else contributes by pull request into main too. `main` is the site: a push or merge that touches the site's files deploys them to borshevik.org by itself, within a minute, with no build, no version and no release in between. `experimental` deploys nothing, so work is committed and pushed there — kept, and checked by GitHub — before it is ready to go live, and merging its pull request is publishing it (decisions#experimental-first). A change is still looked at on this machine, served from the working tree, before it is committed. The ISOs the page offers are not part of this: borshevik's publish-iso workflow uploads them to the server, and deploying never touches them."
+tracker:
+  type: "@GitHub"
 extends: "@DuckWorkflow"
 main_branch: main
 src: .github/
