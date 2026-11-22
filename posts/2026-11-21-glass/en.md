@@ -6,7 +6,7 @@ We have refreshed how **Borshevik** looks: the panel, the overview, the dock and
 
 ## Light and dark
 
-In **GNOME**'s light style the glass is light, in the dark style it is dark, and almost any accent colour goes with almost any wallpaper.
+In **GNOME**'s light style the glass is light, in the dark style it is dark. You can now pick an accent colour without minding the wallpaper: the glass brings the two together.
 
 ![The glass in different accents, on the same wallpaper](accents.en.mp4)
 
